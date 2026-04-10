@@ -1,4 +1,4 @@
-use egui_antd::{Button, ButtonGroup, ButtonSize, ButtonType, ButtonShape, ButtonPosition};
+use egui_antd::{Button, ButtonGroup, ButtonSize, ButtonType, ButtonShape, ButtonPosition, ConfigProvider, Theme, ComponentsTheme, ButtonTheme};
 use eframe::egui;
 
 fn main() -> eframe::Result {
@@ -59,6 +59,8 @@ impl Default for MyApp {
 }
 
 impl eframe::App for MyApp {
+    fn ui(&mut self, _ui: &mut egui::Ui, _frame: &mut eframe::Frame) {}
+
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         for event in ctx.input(|i| i.events.clone()) {
             if let egui::Event::Screenshot { image, .. } = event {
@@ -214,6 +216,29 @@ impl eframe::App for MyApp {
                         ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
                     }
 
+                    if let Some(rect) = demo_card(ui, "Custom disabled backgroundColor", "Customize the background color with disable (applicable to type default and dashed).", |ui| {
+                        let theme = Theme {
+                            components: ComponentsTheme {
+                                button: ButtonTheme {
+                                    default_bg_disabled: Some(egui::Color32::from_rgba_unmultiplied(0, 0, 0, 25)), // 0.1 alpha
+                                    dashed_bg_disabled: Some(egui::Color32::from_rgba_unmultiplied(0, 0, 0, 102)), // 0.4 alpha
+                                },
+                            },
+                        };
+
+                        ConfigProvider::new().theme(theme).show(ui, |ui| {
+                            ui.horizontal_wrapped(|ui| {
+                                ui.spacing_mut().item_spacing.x = 8.0;
+                                ui.add(Button::new("Primary Button").button_type(ButtonType::Primary).disabled(true));
+                                ui.add(Button::new("Default Button").disabled(true));
+                                ui.add(Button::new("Dashed Button").button_type(ButtonType::Dashed).disabled(true));
+                            });
+                        });
+                    }) {
+                        self.pending_screenshot = Some(rect);
+                        ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
+                    }
+
                     // Right Column
                     let ui = &mut columns[1];
 
@@ -321,7 +346,7 @@ impl eframe::App for MyApp {
                                 });
 
                                 // Overlay the ellipsis icon on the menu button to match Ant Design
-                                let icon_rect = response.response.rect.shrink(4.0);
+                                let icon_rect = egui::Rect::from_center_size(response.response.rect.center(), egui::vec2(14.0, 14.0));
                                 ellipsis_icon().tint(egui::Color32::from_gray(100)).paint_at(ui, icon_rect);
 
                                 // Update the menu button's visual position to match the compact group

@@ -185,7 +185,11 @@ impl<'a> Widget for Button<'a> {
         let color_border = egui::Color32::from_rgb(217, 217, 217);
         let color_text = egui::Color32::from_rgba_unmultiplied(0, 0, 0, 224); // 0.88 opacity
         let color_text_disabled = egui::Color32::from_rgba_unmultiplied(0, 0, 0, 64); // 0.25 opacity
-        let color_bg_container_disabled = egui::Color32::from_rgb(245, 245, 245);
+
+        let theme = ui.ctx().data(|d| d.get_temp::<crate::Theme>(egui::Id::new("antd_config_provider_theme")).unwrap_or_default());
+        let default_color_bg_container_disabled = egui::Color32::from_rgb(245, 245, 245);
+        let color_bg_container_disabled_default = theme.components.button.default_bg_disabled.unwrap_or(default_color_bg_container_disabled);
+        let color_bg_container_disabled_dashed = theme.components.button.dashed_bg_disabled.unwrap_or(default_color_bg_container_disabled);
 
         let button_padding = match size {
             ButtonSize::Large => egui::vec2(15.0, 7.0),
@@ -258,12 +262,13 @@ impl<'a> Widget for Button<'a> {
 
             // Wave effect transition
             let wave_id = response.id.with("wave");
+            let now = ui.input(|i| i.time);
             if response.clicked() && !disabled {
-                ui.ctx().data_mut(|d| d.insert_temp(wave_id, ui.input(|i| i.time)));
+                ui.ctx().data_mut(|d| d.insert_temp(wave_id, now));
             }
             let last_click_time: Option<f64> = ui.ctx().data(|d| d.get_temp(wave_id));
             let wave_t = if let Some(t) = last_click_time {
-                let elapsed = ui.input(|i| i.time) - t;
+                let elapsed = now - t;
                 let duration = 0.4;
                 if elapsed < duration {
                     ui.ctx().request_repaint();
@@ -276,8 +281,13 @@ impl<'a> Widget for Button<'a> {
             };
 
             let (bg_fill, stroke, new_text_color) = if disabled {
+                let bg = match button_type {
+                    ButtonType::Default => color_bg_container_disabled_default,
+                    ButtonType::Dashed => color_bg_container_disabled_dashed,
+                    ButtonType::Primary | ButtonType::Text | ButtonType::Link | ButtonType::Gradient => default_color_bg_container_disabled,
+                };
                 (
-                    color_bg_container_disabled,
+                    bg,
                     egui::Stroke::new(1.0, color_border),
                     color_text_disabled,
                 )
