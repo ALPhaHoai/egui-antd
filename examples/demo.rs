@@ -1,4 +1,4 @@
-use egui_antd::{Button, ButtonGroup, ButtonSize, ButtonType, ButtonShape, ButtonPosition, ConfigProvider, Theme, ComponentsTheme, ButtonTheme};
+use egui_antd::{Button, ButtonGroup, ButtonSize, ButtonType, ButtonShape, ButtonPosition, ConfigProvider, Theme, ComponentsTheme, ButtonTheme, Dropdown, menu_item, Space, SpaceDirection, SpaceCompact};
 use eframe::egui;
 
 fn main() -> eframe::Result {
@@ -330,28 +330,16 @@ impl eframe::App for MyApp {
 
                     if let Some(rect) = demo_card(ui, "#8 Multiple Buttons", "If you need several buttons, we recommend that you use 1 primary button + n secondary buttons. If there are more than three operations, you can group some of them into a Dropdown.", |ui| {
                         let ellipsis_icon = || egui::Image::new(egui::include_image!("../node_modules/@ant-design/icons-svg/inline-svg/outlined/ellipsis.svg"));
-                        ui.vertical(|ui| {
-                            ui.spacing_mut().item_spacing.y = 8.0;
+                        Space::new().vertical().show(ui, |ui| {
                             ui.add(Button::new("primary").button_type(ButtonType::Primary));
                             ui.add(Button::new("secondary"));
-                            ui.horizontal(|ui| {
-                                ui.spacing_mut().item_spacing.x = -1.0;
-                                ui.add(Button::new("Actions").set_position(ButtonPosition::First));
 
-                                // Simulating the Dropdown with a small menu button
-                                let response = ui.menu_button("", |ui| {
-                                    if ui.button("1st item").clicked() { ui.close(); }
-                                    if ui.button("2nd item").clicked() { ui.close(); }
-                                    if ui.button("3rd item").clicked() { ui.close(); }
-                                });
-
-                                // Overlay the ellipsis icon on the menu button to match Ant Design
-                                let icon_rect = egui::Rect::from_center_size(response.response.rect.center(), egui::vec2(14.0, 14.0));
-                                ellipsis_icon().tint(egui::Color32::from_gray(100)).paint_at(ui, icon_rect);
-
-                                // Update the menu button's visual position to match the compact group
-                                // (Note: actual styling would require more deep integration, this is a visual port)
+                            SpaceCompact::new(ui).show(|group| {
+                                group.add_button(Button::new("Actions"));
+                                group.add_button(Button::new("").image(ellipsis_icon()));
                             });
+
+                            // Actual Dropdown demo is in #13, but for #8 we want the visual group
                         });
                     }) {
                         self.pending_screenshot = Some(rect);
@@ -397,6 +385,20 @@ impl eframe::App for MyApp {
                         ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
                     }
 
+                    if let Some(rect) = demo_card(ui, "#13 Dropdown", "A dropdown menu for more operations.", |ui| {
+                        ui.horizontal(|ui| {
+                            Dropdown::new("demo_dropdown", Button::new("Hover me").button_type(ButtonType::Primary))
+                                .show(ui, |ui| {
+                                    menu_item(ui, "1st menu item");
+                                    menu_item(ui, "2nd menu item");
+                                    menu_item(ui, "3rd menu item");
+                                });
+                        });
+                    }) {
+                        self.pending_screenshot = Some(rect);
+                        ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
+                    }
+
                     if let Some(rect) = demo_card(ui, "#12 Link Jump", "The href property supports jumping to a specific address.", |ui| {
                         ui.add(Button::new("Ant Design").button_type(ButtonType::Link).href("https://ant.design"));
                     }) {
@@ -413,17 +415,49 @@ impl eframe::App for MyApp {
 
 fn demo_card(ui: &mut egui::Ui, title: &str, desc: &str, content: impl FnOnce(&mut egui::Ui)) -> Option<egui::Rect> {
     let mut screenshot_rect = None;
+
+    // Feedback state
+    let success_id = ui.id().with("screenshot_success").with(title);
+    let now = ui.input(|i| i.time);
+    let last_click: Option<f64> = ui.ctx().data(|d| d.get_temp(success_id));
+    let is_success = last_click.map_or(false, |t| now - t < 2.0);
+
+    if is_success {
+        ui.ctx().request_repaint();
+    }
+
     ui.vertical(|ui| {
         let response = ui.group(|ui| {
             ui.set_width(ui.available_width());
             ui.horizontal(|ui| {
                 ui.strong(title);
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.add(egui::Button::new(egui::RichText::new(egui_phosphor::regular::CAMERA).size(16.0).color(egui::Color32::from_gray(150))).frame(false))
-                        .on_hover_text("Copy screenshot to clipboard")
-                        .clicked()
-                    {
-                        screenshot_rect = Some(ui.max_rect());
+                    let icon = if is_success {
+                        egui_phosphor::regular::CHECK
+                    } else {
+                        egui_phosphor::regular::CAMERA
+                    };
+
+                    let color = if is_success {
+                        egui::Color32::from_rgb(82, 196, 26) // Ant Design Success Green
+                    } else {
+                        egui::Color32::from_gray(150)
+                    };
+
+                    let tooltip = if is_success {
+                        "Copied!"
+                    } else {
+                        "Copy screenshot to clipboard"
+                    };
+
+                    let btn = Button::new("")
+                        .button_type(ButtonType::Text)
+                        .size(ButtonSize::Small)
+                        .icon(egui::RichText::new(icon).size(16.0).color(color));
+
+                    if ui.add(btn).on_hover_text(tooltip).clicked() {
+                        ui.ctx().data_mut(|d| d.insert_temp(success_id, now));
+                        screenshot_rect = Some(egui::Rect::NOTHING); // Flag for capture
                     }
                 });
             });

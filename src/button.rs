@@ -34,6 +34,13 @@ pub enum ButtonPosition {
     First,
     Middle,
     Last,
+    // For 2D compact groups (e.g. within Space)
+    TopFirst,
+    TopMiddle,
+    TopLast,
+    BottomFirst,
+    BottomMiddle,
+    BottomLast,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -226,6 +233,10 @@ impl<'a> Widget for Button<'a> {
         let has_icon = icon.is_some() || image.is_some() || loading;
         let mut desired_size = galley.size() + 2.0 * button_padding;
 
+        if block {
+            desired_size.x = ui.available_width();
+        }
+
         if has_icon {
             desired_size.x += icon_size.x + icon_gap;
         }
@@ -233,9 +244,6 @@ impl<'a> Widget for Button<'a> {
         if shape == ButtonShape::Circle {
             let side = desired_size.x.max(desired_size.y);
             desired_size = egui::vec2(side, side);
-        }
-        if block {
-            desired_size.x = ui.available_width();
         }
 
         let (rect, mut response) = ui.allocate_at_least(desired_size, egui::Sense::click());
@@ -369,6 +377,32 @@ impl<'a> Widget for Button<'a> {
                         nw: 0,
                         sw: 0,
                         ne: 6,
+                        se: 6,
+                    },
+                    ButtonPosition::TopFirst => CornerRadius {
+                        nw: 6,
+                        ne: 0,
+                        sw: 0,
+                        se: 0,
+                    },
+                    ButtonPosition::TopMiddle => CornerRadius::ZERO,
+                    ButtonPosition::TopLast => CornerRadius {
+                        nw: 0,
+                        ne: 6,
+                        sw: 0,
+                        se: 0,
+                    },
+                    ButtonPosition::BottomFirst => CornerRadius {
+                        nw: 0,
+                        ne: 0,
+                        sw: 6,
+                        se: 0,
+                    },
+                    ButtonPosition::BottomMiddle => CornerRadius::ZERO,
+                    ButtonPosition::BottomLast => CornerRadius {
+                        nw: 0,
+                        ne: 0,
+                        sw: 0,
                         se: 6,
                     },
                 },
