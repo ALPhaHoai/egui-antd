@@ -3,6 +3,13 @@ name = "egui-antd"
 version = "0.1.0"
 edition = "2024"
 
+[lints.clippy]
+mod_module_files = "deny"
+
 [dependencies]
-egui = "0.31.0"
-eframe = "0.31.0"
+egui = "0.32.3"
+eframe = "0.32.3"
+egui_extras = { version = "0.32.3", features = ["svg", "image"] }
+image = { version = "0.25", features = ["png", "jpeg"] }
+arboard = "3.4"
+egui-phosphor = "0.10.0"
