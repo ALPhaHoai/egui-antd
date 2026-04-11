@@ -259,7 +259,7 @@ impl<'a> Tabs<'a> {
         let mut scroll_offset = ui.ctx().data_mut(|d| d.get_temp::<f32>(scroll_offset_id).unwrap_or(0.0));
         let _max_scroll_offset = ui.ctx().data_mut(|d| d.get_temp::<f32>(max_scroll_offset_id).unwrap_or(0.0));
 
-        ui.horizontal(|ui| {
+        let res = ui.horizontal(|ui| {
             if let Some(left) = self.extra.left.take() {
                 left(ui);
                 ui.add_space(8.0);
@@ -322,11 +322,19 @@ impl<'a> Tabs<'a> {
                 });
             }
         });
-        ui.separator();
+        
+        let tabs_rect = res.response.rect;
+        
+        let stroke = egui::Stroke::new(1.0, ui.visuals().widgets.noninteractive.bg_stroke.color);
+        let y = if self.tab_position == TabPosition::Top { tabs_rect.max.y } else { tabs_rect.min.y };
+        ui.painter().line_segment(
+            [egui::pos2(tabs_rect.min.x, y), egui::pos2(ui.min_rect().max.x.max(ui.available_rect_before_wrap().max.x), y)],
+            stroke
+        );
     }
 
     fn render_vertical_tab_bar(&mut self, ui: &mut Ui, active_key: &mut Option<String>, changed: &mut bool) {
-        ui.vertical(|ui| {
+        let res = ui.vertical(|ui| {
             if let Some(left) = self.extra.left.take() {
                 left(ui);
                 ui.add_space(8.0);
@@ -346,7 +354,15 @@ impl<'a> Tabs<'a> {
                 });
             }
         });
-        ui.separator();
+        
+        let tabs_rect = res.response.rect;
+        
+        let stroke = egui::Stroke::new(1.0, ui.visuals().widgets.noninteractive.bg_stroke.color);
+        let x = if self.tab_position == TabPosition::Start { tabs_rect.max.x } else { tabs_rect.min.x };
+        ui.painter().line_segment(
+            [egui::pos2(x, tabs_rect.min.y), egui::pos2(x, ui.min_rect().max.y.max(ui.available_rect_before_wrap().max.y))],
+            stroke
+        );
     }
 
     fn render_tabs(&mut self, ui: &mut Ui, active_key: &mut Option<String>, changed: &mut bool) {
@@ -355,22 +371,76 @@ impl<'a> Tabs<'a> {
         for pane in self.panes.drain(..) {
             let is_active = active_key.as_ref() == Some(&pane.key);
 
-            let _text_color = if is_active {
-                Color32::from_rgb(24, 144, 255)
-            } else {
-                Color32::from_rgb(0, 0, 0)
-            };
-
             let _padding = match self.size {
                 TabSize::Small => Vec2::new(8.0, 4.0),
                 TabSize::Medium => Vec2::new(16.0, 8.0),
                 TabSize::Large => Vec2::new(24.0, 12.0),
             };
 
+            let text_color = if is_active {
+                Color32::from_rgb(24, 144, 255)
+            } else {
+                ui.visuals().text_color()
+            };
+            
+            let mut padding_bottom = 0;
+            let mut padding_top = 0;
+            if self.tab_type == TabType::Card || self.tab_type == TabType::EditableCard {
+                if is_active {
+                    if self.tab_position == TabPosition::Top {
+                        padding_bottom = 1;
+                    } else {
+                        padding_top = 1;
+                    }
+                }
+            }
+
             let mut close_clicked = false;
 
             ui.add_enabled_ui(!pane.disabled, |ui| {
-                let resp = (pane.label)(ui);
+                let mut bg_color = Color32::TRANSPARENT;
+                let mut stroke = egui::Stroke::NONE;
+                
+                if self.tab_type == TabType::Card || self.tab_type == TabType::EditableCard {
+                    if is_active {
+                        bg_color = ui.visuals().window_fill();
+                        stroke = egui::Stroke::new(1.0, ui.visuals().widgets.noninteractive.bg_stroke.color);
+                    } else {
+                        bg_color = ui.visuals().faint_bg_color;
+                        stroke = egui::Stroke::new(1.0, ui.visuals().widgets.noninteractive.bg_stroke.color);
+                    }
+                }
+
+                let resp = egui::Frame::NONE
+                    .fill(bg_color)
+                    .stroke(stroke)
+                    .inner_margin(egui::Margin { left: _padding.x as i8, right: _padding.x as i8, top: (_padding.y as i8) + padding_top, bottom: (_padding.y as i8) + padding_bottom })
+                    .corner_radius(if self.tab_type == TabType::Card || self.tab_type == TabType::EditableCard {
+                        if is_active {
+                            if self.tab_position == TabPosition::Top {
+                                egui::CornerRadius { nw: 4, ne: 4, sw: 0, se: 0 }
+                            } else {
+                                egui::CornerRadius { nw: 0, ne: 0, sw: 4, se: 4 }
+                            }
+                        } else {
+                            egui::CornerRadius { nw: 4, ne: 4, sw: 4, se: 4 }
+                        }
+                    } else {
+                        egui::CornerRadius::ZERO
+                    })
+                    .show(ui, |ui| {
+                        ui.horizontal(|ui| {
+                            ui.visuals_mut().override_text_color = Some(text_color);
+                            let r = (pane.label)(ui);
+                            ui.visuals_mut().override_text_color = None;
+                            if (self.tab_type == TabType::EditableCard) && pane.closable {
+                                if ui.small_button("x").clicked() {
+                                    close_clicked = true;
+                                }
+                            }
+                            r
+                        }).inner
+                    }).response;
 
                 if ui.interact(resp.rect, ui.id().with(&pane.key), Sense::click()).clicked() {
                     *active_key = Some(pane.key.clone());
@@ -378,12 +448,40 @@ impl<'a> Tabs<'a> {
                 }
 
                 if is_active {
+                    let rect = resp.rect;
                     let _ = resp.highlight();
-                }
-
-                if (self.tab_type == TabType::EditableCard) && pane.closable {
-                    if ui.small_button("x").clicked() {
-                        close_clicked = true;
+                    if self.tab_type == TabType::Line {
+                        let line_rect = if self.tab_position == TabPosition::Start || self.tab_position == TabPosition::End {
+                            let x = if self.tab_position == TabPosition::Start { rect.max.x } else { rect.min.x };
+                            egui::Rect::from_min_max(
+                                egui::pos2(x - 1.0, rect.min.y),
+                                egui::pos2(x + 1.0, rect.max.y)
+                            )
+                        } else {
+                            let y = if self.tab_position == TabPosition::Top { rect.max.y } else { rect.min.y };
+                            egui::Rect::from_min_max(
+                                egui::pos2(rect.min.x, y - 1.0),
+                                egui::pos2(rect.max.x, y + 1.0)
+                            )
+                        };
+                        ui.painter().rect_filled(line_rect, 0.0, Color32::from_rgb(24, 144, 255));
+                    } else if self.tab_type == TabType::Card || self.tab_type == TabType::EditableCard {
+                        let bg_color = ui.visuals().window_fill();
+                        if self.tab_position == TabPosition::Top {
+                            let y = rect.max.y;
+                            let line_rect = egui::Rect::from_min_max(
+                                egui::pos2(rect.min.x + 1.0, y - 1.0),
+                                egui::pos2(rect.max.x - 1.0, y + 3.0) // Extend further down
+                            );
+                            ui.painter().rect_filled(line_rect, 0.0, bg_color);
+                        } else {
+                            let y = rect.min.y;
+                            let line_rect = egui::Rect::from_min_max(
+                                egui::pos2(rect.min.x + 1.0, y - 3.0),
+                                egui::pos2(rect.max.x - 1.0, y + 1.0)
+                            );
+                            ui.painter().rect_filled(line_rect, 0.0, bg_color);
+                        }
                     }
                 }
             });
@@ -393,7 +491,11 @@ impl<'a> Tabs<'a> {
                     cb(TabEditAction::Remove(pane.key.clone()));
                 }
             }
-            ui.add_space(8.0);
+            if self.tab_type == TabType::Line {
+                ui.add_space(8.0);
+            } else {
+                ui.add_space(2.0); // Less space between card tabs
+            }
         }
 
         if self.tab_type == TabType::EditableCard && !self.hide_add {
@@ -413,11 +515,81 @@ impl<'a> Tabs<'a> {
         for pane in self.panes.drain(..) {
             let is_active = active_key.as_ref() == Some(&pane.key);
 
+            let _padding = match self.size {
+                TabSize::Small => Vec2::new(8.0, 4.0),
+                TabSize::Medium => Vec2::new(16.0, 8.0),
+                TabSize::Large => Vec2::new(24.0, 12.0),
+            };
+
+            let text_color = if is_active {
+                Color32::from_rgb(24, 144, 255)
+            } else {
+                ui.visuals().text_color()
+            };
+            
+            let mut padding_left = 0;
+            let mut padding_right = 0;
+            if self.tab_type == TabType::Card || self.tab_type == TabType::EditableCard {
+                if is_active {
+                    if self.tab_position == TabPosition::Start {
+                        padding_right = 1;
+                    } else {
+                        padding_left = 1;
+                    }
+                }
+            }
+
             let mut close_clicked = false;
 
             ui.horizontal(|ui| {
                 ui.add_enabled_ui(!pane.disabled, |ui| {
-                    let resp = (pane.label)(ui);
+                    let mut bg_color = Color32::TRANSPARENT;
+                    let mut stroke = egui::Stroke::NONE;
+                    
+                    if self.tab_type == TabType::Card || self.tab_type == TabType::EditableCard {
+                        if is_active {
+                            bg_color = ui.visuals().window_fill();
+                            stroke = egui::Stroke::new(1.0, ui.visuals().widgets.noninteractive.bg_stroke.color);
+                        } else {
+                            bg_color = ui.visuals().faint_bg_color;
+                            stroke = egui::Stroke::new(1.0, ui.visuals().widgets.noninteractive.bg_stroke.color);
+                        }
+                    }
+
+                    let resp = egui::Frame::NONE
+                        .fill(bg_color)
+                        .stroke(stroke)
+                        .inner_margin(egui::Margin { left: (_padding.x as i8) + padding_left, right: (_padding.x as i8) + padding_right, top: _padding.y as i8, bottom: _padding.y as i8 })
+                        .corner_radius(if self.tab_type == TabType::Card || self.tab_type == TabType::EditableCard {
+                            if self.tab_position == TabPosition::Start {
+                                if is_active {
+                                    egui::CornerRadius { nw: 4, ne: 0, sw: 4, se: 0 }
+                                } else {
+                                    egui::CornerRadius { nw: 4, ne: 4, sw: 4, se: 4 }
+                                }
+                            } else {
+                                if is_active {
+                                    egui::CornerRadius { nw: 0, ne: 4, sw: 0, se: 4 }
+                                } else {
+                                    egui::CornerRadius { nw: 4, ne: 4, sw: 4, se: 4 }
+                                }
+                            }
+                        } else {
+                            egui::CornerRadius::ZERO
+                        })
+                        .show(ui, |ui| {
+                            ui.horizontal(|ui| {
+                                ui.visuals_mut().override_text_color = Some(text_color);
+                            let r = (pane.label)(ui);
+                            ui.visuals_mut().override_text_color = None;
+                                if (self.tab_type == TabType::EditableCard) && pane.closable {
+                                    if ui.small_button("x").clicked() {
+                                        close_clicked = true;
+                                    }
+                                }
+                                r
+                            }).inner
+                        }).response;
 
                     if ui.interact(resp.rect, ui.id().with(&pane.key), Sense::click()).clicked() {
                         *active_key = Some(pane.key.clone());
@@ -425,12 +597,40 @@ impl<'a> Tabs<'a> {
                     }
 
                     if is_active {
+                        let rect = resp.rect;
                         let _ = resp.highlight();
-                    }
-
-                    if (self.tab_type == TabType::EditableCard) && pane.closable {
-                        if ui.small_button("x").clicked() {
-                            close_clicked = true;
+                        if self.tab_type == TabType::Line {
+                            let line_rect = if self.tab_position == TabPosition::Start || self.tab_position == TabPosition::End {
+                                let x = if self.tab_position == TabPosition::Start { rect.max.x } else { rect.min.x };
+                                egui::Rect::from_min_max(
+                                    egui::pos2(x - 1.0, rect.min.y),
+                                    egui::pos2(x + 1.0, rect.max.y)
+                                )
+                            } else {
+                                let y = if self.tab_position == TabPosition::Top { rect.max.y } else { rect.min.y };
+                                egui::Rect::from_min_max(
+                                    egui::pos2(rect.min.x, y - 1.0),
+                                    egui::pos2(rect.max.x, y + 1.0)
+                                )
+                            };
+                            ui.painter().rect_filled(line_rect, 0.0, Color32::from_rgb(24, 144, 255));
+                        } else if self.tab_type == TabType::Card || self.tab_type == TabType::EditableCard {
+                            let bg_color = ui.visuals().window_fill();
+                            if self.tab_position == TabPosition::Start {
+                                let x = rect.max.x;
+                                let line_rect = egui::Rect::from_min_max(
+                                    egui::pos2(x - 1.0, rect.min.y + 1.0),
+                                    egui::pos2(x + 3.0, rect.max.y - 1.0) // Extend further right
+                                );
+                                ui.painter().rect_filled(line_rect, 0.0, bg_color);
+                            } else {
+                                let x = rect.min.x;
+                                let line_rect = egui::Rect::from_min_max(
+                                    egui::pos2(x - 3.0, rect.min.y + 1.0),
+                                    egui::pos2(x + 1.0, rect.max.y - 1.0)
+                                );
+                                ui.painter().rect_filled(line_rect, 0.0, bg_color);
+                            }
                         }
                     }
                 });
@@ -441,7 +641,11 @@ impl<'a> Tabs<'a> {
                     cb(TabEditAction::Remove(pane.key.clone()));
                 }
             }
-            ui.add_space(4.0);
+            if self.tab_type == TabType::Line {
+                ui.add_space(4.0);
+            } else {
+                ui.add_space(2.0);
+            }
         }
 
         if self.tab_type == TabType::EditableCard && !self.hide_add {
