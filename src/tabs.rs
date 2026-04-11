@@ -328,7 +328,7 @@ impl<'a> Tabs<'a> {
         let stroke = egui::Stroke::new(1.0, ui.visuals().widgets.noninteractive.bg_stroke.color);
         let y = if self.tab_position == TabPosition::Top { tabs_rect.max.y } else { tabs_rect.min.y };
         ui.painter().line_segment(
-            [egui::pos2(tabs_rect.min.x, y), egui::pos2(ui.min_rect().max.x.max(ui.available_rect_before_wrap().max.x), y)],
+            [egui::pos2(ui.min_rect().min.x, y), egui::pos2(ui.min_rect().max.x.max(ui.max_rect().max.x), y)],
             stroke
         );
     }
@@ -360,7 +360,7 @@ impl<'a> Tabs<'a> {
         let stroke = egui::Stroke::new(1.0, ui.visuals().widgets.noninteractive.bg_stroke.color);
         let x = if self.tab_position == TabPosition::Start { tabs_rect.max.x } else { tabs_rect.min.x };
         ui.painter().line_segment(
-            [egui::pos2(x, tabs_rect.min.y), egui::pos2(x, ui.min_rect().max.y.max(ui.available_rect_before_wrap().max.y))],
+            [egui::pos2(x, ui.min_rect().min.y), egui::pos2(x, ui.min_rect().max.y.max(ui.max_rect().max.y))],
             stroke
         );
     }
