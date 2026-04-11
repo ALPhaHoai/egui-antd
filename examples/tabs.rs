@@ -35,12 +35,16 @@ impl Default for MyApp {
 }
 
 impl eframe::App for MyApp {
-    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {}
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        #[allow(deprecated)]
+    
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         #[allow(deprecated)]
         egui::CentralPanel::default().show(ctx, |ui| {
-            egui::ScrollArea::vertical().show(ui, |ui| {
+            self.ui(ui, frame);
+        });
+    }
+
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        egui::ScrollArea::vertical().show(ui, |ui| {
                 ui.heading("Tabs Demo");
                 ui.separator();
                 
@@ -149,6 +153,5 @@ impl eframe::App for MyApp {
                         ui.label(format!("Content of {}", key));
                     });
             });
-        });
     }
 }
