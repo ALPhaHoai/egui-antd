@@ -21,12 +21,8 @@ impl<'a> Dropdown<'a> {
     ) -> (Response, Option<R>) {
         let response = ui.add(self.button);
 
-        if response.clicked() {
-            ui.memory_mut(|mem| mem.open_popup(self.id));
-        }
-
         let mut inner_res = None;
-        egui::popup_below_widget(ui, self.id, &response, egui::PopupCloseBehavior::CloseOnClick, |ui| {
+        egui::Popup::menu(&response).id(self.id).show(|ui| {
             ui.set_min_width(120.0);
 
             // Ant Design 5.0 menu styling

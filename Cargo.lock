@@ -1053,6 +1053,7 @@ name = "egui-antd"
 version = "0.1.0"
 dependencies = [
  "arboard",
+ "bytemuck",
  "eframe",
  "egui",
  "egui-phosphor",

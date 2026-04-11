@@ -1,4 +1,4 @@
-use egui_antd::{Button, ButtonGroup, ButtonSize, ButtonType, ButtonShape, ButtonPosition, ConfigProvider, Theme, ComponentsTheme, ButtonTheme, Dropdown, menu_item, Space, SpaceDirection, SpaceCompact};
+use egui_antd::{Button, ButtonGroup, ButtonSize, ButtonType, ButtonShape, ConfigProvider, Theme, ComponentsTheme, ButtonTheme, Dropdown, menu_item, Space, SpaceCompact};
 use eframe::egui;
 
 fn main() -> eframe::Result {
@@ -106,6 +106,7 @@ impl eframe::App for MyApp {
             }
         }
 
+        #[allow(deprecated)]
         egui::CentralPanel::default().show(ctx, |ui| {
             egui::ScrollArea::vertical().show(ui, |ui| {
                 ui.heading("Button");
