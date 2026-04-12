@@ -31,18 +31,65 @@ struct MyApp {
     pending_screenshot: Option<egui::Rect>,
 }
 
+impl MyApp {
+    fn handle_edit(&mut self, action: TabEditAction) {
+        match action {
+            TabEditAction::Add => {
+                let id = self.next_id.to_string();
+                self.panes.push((id.clone(), "New Tab".to_string()));
+                self.editable_active_key = id;
+                self.next_id += 1;
+            }
+            TabEditAction::Remove(key) => {
+                if let Some(pos) = self.panes.iter().position(|(k, _)| k == &key) {
+                    self.panes.remove(pos);
+                    if key == self.editable_active_key && !self.panes.is_empty() {
+                        let new_pos = if pos > 0 { pos - 1 } else { 0 };
+                        self.editable_active_key = self.panes[new_pos].0.clone();
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[allow(dead_code)]
+fn show_demo(
+    ui: &mut egui::Ui,
+    pending_screenshot: &mut Option<egui::Rect>,
+    title: &str,
+    desc: &str,
+    content: impl FnOnce(&mut egui::Ui),
+) {
+    show_demo_ext(ui, pending_screenshot, title, desc, false, content);
+}
+
+fn show_demo_ext(
+    ui: &mut egui::Ui,
+    pending_screenshot: &mut Option<egui::Rect>,
+    title: &str,
+    desc: &str,
+    no_padding: bool,
+    content: impl FnOnce(&mut egui::Ui),
+) {
+    if let Some(rect) = demo_card(ui, title, desc, no_padding, content) {
+        *pending_screenshot = Some(rect);
+        ui.ctx().send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
+    }
+}
+
 impl Default for MyApp {
     fn default() -> Self {
         Self {
             active_key: "1".to_string(),
-            editable_active_key: "1".to_string(),
+            editable_active_key: "3".to_string(),
             panes: vec![
                 ("1".to_string(), "Tab 1".to_string()),
                 ("2".to_string(), "Tab 2".to_string()),
                 ("3".to_string(), "Tab 3".to_string()),
             ],
             next_id: 4,
-            size: TabSize::Medium,
+            size: TabSize::Small,
             position: TabPosition::Top,
             pending_screenshot: None,
         }
@@ -111,78 +158,53 @@ impl eframe::App for MyApp {
                     // Left Column
                     let ui = &mut columns[0];
 
-                    if let Some(rect) = demo_card(ui, "#1 Basic", "Default tabs.", |ui| {
-                        let mut tabs = Tabs::new("basic")
-                            .items(vec![
+                    show_demo_ext(ui, &mut self.pending_screenshot, "Basic", "Default tabs.", true, |ui| {
+                        // The active key is managed by the app state. `active_key` method provides two-way binding.
+                        Tabs::new("basic")
+                            .active_key(&mut self.active_key)
+                            .items([
                                 TabPane::new("1", "Tab 1"),
                                 TabPane::new("2", "Tab 2"),
                                 TabPane::new("3", "Tab 3"),
-                            ]);
+                            ])
+                            .show(ui, |ui, key| {
+                                ui.label(format!("Content of tab {}", key));
+                            });
+                    });
 
-                        if !self.active_key.is_empty() {
-                            tabs = tabs.active_key(&self.active_key);
-                        }
-
-                        let mut new_key = None;
-                        tabs.show(ui, |ui, key| {
-                            if key == self.active_key {
-                                ui.label(format!("Content of Tab Pane {}", key));
-                            } else {
-                                new_key = Some(key.to_string());
-                            }
-                        });
-
-                        // Internal interaction updates:
-                        // The Tabs component uses ui.interact which changes internal state.
-                        // In a real app we'd use a callback or the component would expose state.
-                        // For now we'll just demonstrate the visual appearance.
-                    }) {
-                        self.pending_screenshot = Some(rect);
-                        ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
-                    }
-
-                    if let Some(rect) = demo_card(ui, "#2 Icon", "Tabs with icons.", |ui| {
+                    show_demo_ext(ui, &mut self.pending_screenshot, "Icon", "Tabs with icons.", true, |ui| {
                         Tabs::new("icons")
-                            .items(vec![
-                                TabPane::icon("1", "Apple", |ui| ui.label(egui_phosphor::regular::APPLE_LOGO)),
-                                TabPane::icon("2", "Android", |ui| ui.label(egui_phosphor::regular::ANDROID_LOGO)),
+                            .default_active_key("2")
+                            .items([
+                                TabPane::icon("1", "Tab 1", |ui| ui.label(egui_phosphor::regular::APPLE_LOGO)),
+                                TabPane::icon("2", "Tab 2", |ui| ui.label(egui_phosphor::regular::ANDROID_LOGO)),
                             ])
                             .show(ui, |ui, key| {
-                                ui.label(format!("Content of Tab Pane {}", key));
+                                ui.label(format!("Content of tab {}", key));
                             });
-                    }) {
-                        self.pending_screenshot = Some(rect);
-                        ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
-                    }
+                    });
 
-                    if let Some(rect) = demo_card(ui, "#3 Size", "Large size tabs are usually used in page header, and small size tabs are used in Modal.", |ui| {
-                        ui.horizontal(|ui| {
-                            ui.selectable_value(&mut self.size, TabSize::Large, "Large");
-                            ui.selectable_value(&mut self.size, TabSize::Medium, "Medium");
-                            ui.selectable_value(&mut self.size, TabSize::Small, "Small");
-                        });
-
-                        ui.add_space(16.0);
-                        ui.separator();
-                        ui.add_space(16.0);
-
-                        Tabs::new("size_demo")
-                            .size(self.size)
-                            .items(vec![
-                                TabPane::new("1", "Tab 1"),
-                                TabPane::new("2", "Tab 2"),
-                                TabPane::new("3", "Tab 3"),
+                    show_demo_ext(ui, &mut self.pending_screenshot, "Custom Label", "Customized tab label.", true, |ui| {
+                        Tabs::new("custom_label")
+                            .items([
+                                TabPane::custom("1", |ui| {
+                                    ui.horizontal(|ui| {
+                                        ui.label(egui_phosphor::regular::USER);
+                                        ui.add_space(4.0);
+                                        ui.strong("User Info")
+                                    }).response
+                                }),
+                                TabPane::new("2", "Settings"),
                             ])
                             .show(ui, |ui, key| {
-                                ui.label(format!("Content of Tab Pane {}", key));
+                                ui.label(format!("Content of tab {}", key));
                             });
-                    }) {
-                        self.pending_screenshot = Some(rect);
-                        ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
-                    }
+                    });
 
-                    if let Some(rect) = demo_card(ui, "#4 Position", "Tab's position: left, right, top or bottom.", |ui| {
+                    show_demo_ext(ui, &mut self.pending_screenshot, "Position", "Tab's position: left, right, top or bottom.", true, |ui| {
+                        ui.add_space(8.0);
                         ui.horizontal(|ui| {
+                            ui.add_space(8.0);
                             ui.selectable_value(&mut self.position, TabPosition::Top, "Top");
                             ui.selectable_value(&mut self.position, TabPosition::Bottom, "Bottom");
                             ui.selectable_value(&mut self.position, TabPosition::Start, "Left");
@@ -198,135 +220,159 @@ impl eframe::App for MyApp {
                         ui.allocate_ui(egui::vec2(ui.available_width(), height), |ui| {
                             Tabs::new("position_demo")
                                 .tab_position(self.position)
-                                .items(vec![
+                                .items([
                                     TabPane::new("1", "Tab 1"),
                                     TabPane::new("2", "Tab 2"),
                                     TabPane::new("3", "Tab 3"),
                                 ])
                                 .show(ui, |ui, key| {
-                                    ui.label(format!("Content of Tab Pane {}", key));
+                                    ui.add_space(8.0);
+                                    ui.label(format!("Content of tab {}", key));
                                 });
                         });
-                    }) {
-                        self.pending_screenshot = Some(rect);
-                        ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
-                    }
+                    });
 
                     // Right Column
                     let ui = &mut columns[1];
 
-                    if let Some(rect) = demo_card(ui, "#5 Card Type", "Tab with card style.", |ui| {
-                        Tabs::new("card_demo")
-                            .tab_type(TabType::Card)
-                            .items(vec![
+                    let mut edit_action = None;
+                    show_demo_ext(ui, &mut self.pending_screenshot, "Size & Type", "Large size tabs are usually used in page header, and small size tabs are used in Modal. All types support size.", true, |ui| {
+                        ui.add_space(8.0);
+                        ui.horizontal(|ui| {
+                            ui.add_space(8.0);
+                            ui.selectable_value(&mut self.size, TabSize::Large, "Large");
+                            ui.selectable_value(&mut self.size, TabSize::Medium, "Medium");
+                            ui.selectable_value(&mut self.size, TabSize::Small, "Small");
+                        });
+
+                        ui.add_space(16.0);
+                        ui.separator();
+                        ui.add_space(16.0);
+
+                        ui.label("Line (Basic)");
+                        Tabs::new("size_line")
+                            .size(self.size)
+                            .items([
                                 TabPane::new("1", "Tab 1"),
                                 TabPane::new("2", "Tab 2"),
                                 TabPane::new("3", "Tab 3"),
                             ])
                             .show(ui, |ui, key| {
-                                ui.label(format!("Content of Tab Pane {}", key));
+                                ui.label(format!("Content of tab {}", key));
                             });
-                    }) {
-                        self.pending_screenshot = Some(rect);
-                        ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
-                    }
 
-                    if let Some(rect) = demo_card(ui, "#6 Editable Card", "Only card type Tabs support adding and closable. + is only for Card type.", |ui| {
-                        let mut edit_action = None;
+                        ui.add_space(24.0);
+                        ui.label("Card");
+                        Tabs::new("size_card")
+                            .size(self.size)
+                            .tab_type(TabType::Card)
+                            .items([
+                                TabPane::new("1", "Tab 1"),
+                                TabPane::new("2", "Tab 2"),
+                                TabPane::new("3", "Tab 3"),
+                            ])
+                            .show(ui, |ui, key| {
+                                ui.label(format!("Content of card tab {}", key));
+                            });
 
-                        let panes = self.panes.iter().map(|(k, t)| TabPane::new(k, t)).collect();
-
-                        let mut tabs = Tabs::new("editable_demo")
+                        ui.add_space(24.0);
+                        ui.label("Editable Card");
+                        let panes: Vec<_> = self.panes.iter().map(|(k, t)| TabPane::new(k, t)).collect();
+                        Tabs::new("size_editable")
+                            .size(self.size)
                             .tab_type(TabType::EditableCard)
                             .items(panes)
+                            .active_key(&mut self.editable_active_key)
                             .on_edit(|action| {
                                 edit_action = Some(action);
+                            })
+                            .show(ui, |ui, key| {
+                                ui.label(format!("Content of editable tab {}", key));
                             });
+                    });
 
-                        if !self.panes.iter().any(|(k, _)| k == &self.editable_active_key) {
-                            if !self.panes.is_empty() {
-                                self.editable_active_key = self.panes[0].0.clone();
-                            }
-                        }
-
-                        tabs = tabs.active_key(&self.editable_active_key);
-
-                        tabs.show(ui, |ui, key| {
-                            ui.label(format!("Content of Tab Pane {}", key));
-                        });
-
-                        if let Some(action) = edit_action {
-                            match action {
-                                TabEditAction::Add => {
-                                    let id = self.next_id.to_string();
-                                    self.panes.push((id.clone(), format!("New Tab {}", self.next_id)));
-                                    self.editable_active_key = id;
-                                    self.next_id += 1;
-                                }
-                                TabEditAction::Remove(key) => {
-                                    if let Some(pos) = self.panes.iter().position(|(k, _)| k == &key) {
-                                        self.panes.remove(pos);
-                                        if key == self.editable_active_key {
-                                            if !self.panes.is_empty() {
-                                                self.editable_active_key = self.panes[pos.min(self.panes.len() - 1)].0.clone();
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }) {
-                        self.pending_screenshot = Some(rect);
-                        ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
+                    // Handle tab additions and removals
+                    if let Some(action) = edit_action {
+                        self.handle_edit(action);
                     }
 
-                    if let Some(rect) = demo_card(ui, "#7 Extra Content", "You can add extra actions to the right or left of Tabs.", |ui| {
+                    show_demo_ext(ui, &mut self.pending_screenshot, "Extra Content", "You can add extra actions to the right or left of Tabs, or even both side of Tabs.", true, |ui| {
                         Tabs::new("extra_demo")
+                            .default_active_key("2")
                             .extra_content(TabBarExtraContent::new()
-                                .left(|ui| { ui.add(Button::new("Left Extra").size(ButtonSize::Small)); })
-                                .right(|ui| { ui.add(Button::new("Right Extra").size(ButtonSize::Small)); })
+                                .left(|ui| { ui.add(Button::new("Left Extra Action").size(ButtonSize::Small)); })
+                                .right(|ui| { ui.add(Button::new("Right Extra Action").size(ButtonSize::Small)); })
                             )
-                            .items(vec![
+                            .items([
                                 TabPane::new("1", "Tab 1"),
                                 TabPane::new("2", "Tab 2"),
+                                TabPane::new("3", "Tab 3"),
                             ])
                             .show(ui, |ui, key| {
-                                ui.label(format!("Content of Tab Pane {}", key));
+                                ui.label(format!("Content of tab {}", key));
                             });
-                    }) {
-                        self.pending_screenshot = Some(rect);
-                        ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
-                    }
+                    });
 
-                    if let Some(rect) = demo_card(ui, "#8 Centered", "Centered tabs.", |ui| {
+                    show_demo_ext(ui, &mut self.pending_screenshot, "Centered", "Centered tabs.", true, |ui| {
                         Tabs::new("centered_demo")
                             .centered(true)
-                            .items(vec![
+                            .items([
                                 TabPane::new("1", "Tab 1"),
                                 TabPane::new("2", "Tab 2"),
                             ])
                             .show(ui, |ui, key| {
-                                ui.label(format!("Content of Tab Pane {}", key));
+                                ui.label(format!("Content of tab {}", key));
                             });
-                    }) {
-                        self.pending_screenshot = Some(rect);
-                        ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
-                    }
+                    });
 
-                    if let Some(rect) = demo_card(ui, "#9 Disabled", "Disabled a tab.", |ui| {
+                    show_demo_ext(ui, &mut self.pending_screenshot, "Disabled", "Disabled a tab.", true, |ui| {
                         Tabs::new("disabled_demo")
-                            .items(vec![
+                            .items([
                                 TabPane::new("1", "Tab 1"),
                                 TabPane::new("2", "Disabled Tab").disabled(true),
                                 TabPane::new("3", "Tab 3"),
                             ])
                             .show(ui, |ui, key| {
-                                ui.label(format!("Content of Tab Pane {}", key));
+                                ui.label(format!("Content of tab {}", key));
                             });
-                    }) {
-                        self.pending_screenshot = Some(rect);
-                        ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
-                    }
+                    });
+
+                    show_demo_ext(ui, &mut self.pending_screenshot, "Custom Gutter", "The spacing between tabs.", true, |ui| {
+                        Tabs::new("gutter_demo")
+                            .gutter(64.0)
+                            .items([
+                                TabPane::new("1", "Tab 1"),
+                                TabPane::new("2", "Tab 2"),
+                                TabPane::new("3", "Tab 3"),
+                            ])
+                            .show(ui, |ui, key| {
+                                ui.label(format!("Content of tab {}", key));
+                            });
+                    });
+
+                    show_demo_ext(ui, &mut self.pending_screenshot, "Sliding", "Tab bar can be scrolled when there is no enough space.", true, |ui| {
+                        let panes: Vec<_> = (1..=20).map(|i| TabPane::new(i.to_string(), format!("Tab {}", i))).collect();
+                        // Force a narrow width to demonstrate horizontal scrolling
+                        ui.set_max_width(300.0);
+                        Tabs::new("sliding_demo")
+                            .items(panes)
+                            .show(ui, |ui, key| {
+                                ui.label(format!("Content of tab {}", key));
+                            });
+                    });
+
+                    show_demo_ext(ui, &mut self.pending_screenshot, "Vertical Scroll", "Vertical tabs with scroll arrows.", true, |ui| {
+                        let panes: Vec<_> = (1..=20).map(|i| TabPane::new(i.to_string(), format!("Tab {}", i))).collect();
+                        ui.allocate_ui(egui::vec2(ui.available_width(), 200.0), |ui| {
+                            Tabs::new("vertical_scroll_demo")
+                                .tab_position(TabPosition::Start)
+                                .items(panes)
+                                .show(ui, |ui, key| {
+                                    ui.add_space(8.0);
+                                    ui.label(format!("Content of tab {}", key));
+                                });
+                        });
+                    });
                 });
 
                 ui.add_space(50.0);
@@ -335,7 +381,7 @@ impl eframe::App for MyApp {
     }
 }
 
-fn demo_card(ui: &mut egui::Ui, title: &str, desc: &str, content: impl FnOnce(&mut egui::Ui)) -> Option<egui::Rect> {
+fn demo_card(ui: &mut egui::Ui, title: &str, desc: &str, no_padding: bool, content: impl FnOnce(&mut egui::Ui)) -> Option<egui::Rect> {
     let mut screenshot_rect = None;
 
     let success_id = ui.id().with("screenshot_success").with(title);
@@ -348,27 +394,40 @@ fn demo_card(ui: &mut egui::Ui, title: &str, desc: &str, content: impl FnOnce(&m
     }
 
     ui.vertical(|ui| {
-        let response = ui.group(|ui| {
+        let frame = if no_padding {
+            egui::Frame::group(ui.style()).inner_margin(0.0)
+        } else {
+            egui::Frame::group(ui.style())
+        };
+
+        let response = frame.show(ui, |ui| {
             ui.set_width(ui.available_width());
+
+            // Demo Content (Top)
+            if !no_padding {
+                ui.add_space(8.0);
+            }
+            content(ui);
+            if !no_padding {
+                ui.add_space(8.0);
+            }
+
+            ui.separator();
+
+            // Meta Info (Bottom)
             ui.horizontal(|ui| {
+                if no_padding {
+                    ui.add_space(8.0);
+                }
                 ui.strong(title);
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    let icon = if is_success {
-                        egui_phosphor::regular::CHECK
+                    if no_padding {
+                        ui.add_space(8.0);
+                    }
+                    let (icon, color, tooltip) = if is_success {
+                        (egui_phosphor::regular::CHECK, egui::Color32::from_rgb(82, 196, 26), "Copied!")
                     } else {
-                        egui_phosphor::regular::CAMERA
-                    };
-
-                    let color = if is_success {
-                        egui::Color32::from_rgb(82, 196, 26)
-                    } else {
-                        egui::Color32::from_gray(150)
-                    };
-
-                    let tooltip = if is_success {
-                        "Copied!"
-                    } else {
-                        "Copy screenshot to clipboard"
+                        (egui_phosphor::regular::CAMERA, egui::Color32::from_gray(150), "Copy screenshot to clipboard")
                     };
 
                     let btn = Button::new("")
@@ -383,9 +442,13 @@ fn demo_card(ui: &mut egui::Ui, title: &str, desc: &str, content: impl FnOnce(&m
                 });
             });
             ui.add_space(4.0);
-            ui.label(egui::RichText::new(desc).size(12.0).color(egui::Color32::from_gray(120)));
-            ui.add_space(12.0);
-            content(ui);
+            ui.horizontal(|ui| {
+                if no_padding {
+                    ui.add_space(8.0);
+                }
+                ui.label(egui::RichText::new(desc).size(12.0).color(egui::Color32::from_gray(120)));
+            });
+            ui.add_space(4.0);
         }).response;
 
         if screenshot_rect.is_some() {

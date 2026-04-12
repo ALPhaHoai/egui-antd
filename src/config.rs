@@ -34,15 +34,15 @@ impl ConfigProvider {
 
     pub fn show<R>(self, ui: &mut egui::Ui, add_contents: impl FnOnce(&mut egui::Ui) -> R) -> R {
         let id = egui::Id::new("antd_config_provider_theme");
-        
-        let previous_theme = ui.ctx().data_mut(|d| d.get_temp::<Theme>(id).unwrap_or_default());
-        
+
+        let previous_theme = ui.ctx().data(|d| d.get_temp::<Theme>(id).unwrap_or_default());
+
         ui.ctx().data_mut(|d| d.insert_temp(id, self.theme.clone()));
-        
+
         let result = add_contents(ui);
-        
+
         ui.ctx().data_mut(|d| d.insert_temp(id, previous_theme));
-        
+
         result
     }
 }

@@ -136,7 +136,7 @@ impl eframe::App for MyApp {
 
                         // --- Right Column ---
                         if columns.len() > 1 {
-                            let ui = &mut columns[1];
+                            let _ui = &mut columns[1];
                             // TODO: Add more demo cards here for the right column
                         }
                     });

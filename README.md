@@ -68,16 +68,20 @@ ui.add(
 ```rust
 use egui_antd::{Tabs, TabPane};
 
-Tabs::new("my_tabs").items(vec![
-    TabPane::new("1", "Tab 1"),
-    TabPane::new("2", "Tab 2"),
-]).show(ui, |ui, key| {
-    match key {
-        "1" => { ui.label("Content of Tab 1"); },
-        "2" => { ui.label("Content of Tab 2"); },
-        _ => {}
-    }
-});
+let mut active_key = "1".to_string(); // Managed by your state
+
+Tabs::new("my_tabs")
+    .active_key(&mut active_key)
+    .items(vec![
+        TabPane::new("1", "Tab 1"),
+        TabPane::new("2", "Tab 2"),
+    ]).show(ui, |ui, key| {
+        match key {
+            "1" => { ui.label("Content of Tab 1"); },
+            "2" => { ui.label("Content of Tab 2"); },
+            _ => {}
+        }
+    });
 ```
 
 ## Running the Demo

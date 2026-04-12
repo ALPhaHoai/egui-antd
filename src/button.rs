@@ -201,13 +201,13 @@ impl<'a> Widget for Button<'a> {
         let button_padding = match size {
             ButtonSize::Large => egui::vec2(15.0, 7.0),
             ButtonSize::Middle => egui::vec2(15.0, 4.0),
-            ButtonSize::Small => egui::vec2(7.0, 0.0),
+            ButtonSize::Small => egui::vec2(7.0, 2.0),
         };
 
         let text_size = match size {
             ButtonSize::Large => 16.0,
             ButtonSize::Middle => 14.0,
-            ButtonSize::Small => 12.0,
+            ButtonSize::Small => 14.0,
         };
 
         let font_id = egui::FontId::proportional(text_size);
@@ -271,7 +271,7 @@ impl<'a> Widget for Button<'a> {
             // Wave effect transition
             let wave_id = response.id.with("wave");
             let now = ui.input(|i| i.time);
-            if response.clicked() && !disabled {
+            if response.clicked() && !disabled && !loading {
                 ui.ctx().data_mut(|d| d.insert_temp(wave_id, now));
             }
             let last_click_time: Option<f64> = ui.ctx().data(|d| d.get_temp(wave_id));
@@ -282,6 +282,7 @@ impl<'a> Widget for Button<'a> {
                     ui.ctx().request_repaint();
                     (elapsed / duration) as f32
                 } else {
+                    ui.ctx().data_mut(|d| d.remove_temp::<f64>(wave_id));
                     0.0
                 }
             } else {
@@ -361,14 +362,19 @@ impl<'a> Widget for Button<'a> {
             };
             text_color = new_text_color;
 
+            let radius = match size {
+                ButtonSize::Small => 2,
+                _ => 4,
+            };
+
             let corner_radius = match shape {
                 ButtonShape::Circle => CornerRadius::same(u8::MAX),
                 ButtonShape::Round => CornerRadius::same(u8::MAX),
                 ButtonShape::Default => match position {
-                    ButtonPosition::None => CornerRadius::same(6),
+                    ButtonPosition::None => CornerRadius::same(radius),
                     ButtonPosition::First => CornerRadius {
-                        nw: 6,
-                        sw: 6,
+                        nw: radius,
+                        sw: radius,
                         ne: 0,
                         se: 0,
                     },
@@ -376,11 +382,11 @@ impl<'a> Widget for Button<'a> {
                     ButtonPosition::Last => CornerRadius {
                         nw: 0,
                         sw: 0,
-                        ne: 6,
-                        se: 6,
+                        ne: radius,
+                        se: radius,
                     },
                     ButtonPosition::TopFirst => CornerRadius {
-                        nw: 6,
+                        nw: radius,
                         ne: 0,
                         sw: 0,
                         se: 0,
@@ -388,14 +394,14 @@ impl<'a> Widget for Button<'a> {
                     ButtonPosition::TopMiddle => CornerRadius::ZERO,
                     ButtonPosition::TopLast => CornerRadius {
                         nw: 0,
-                        ne: 6,
+                        ne: radius,
                         sw: 0,
                         se: 0,
                     },
                     ButtonPosition::BottomFirst => CornerRadius {
                         nw: 0,
                         ne: 0,
-                        sw: 6,
+                        sw: radius,
                         se: 0,
                     },
                     ButtonPosition::BottomMiddle => CornerRadius::ZERO,
@@ -403,22 +409,24 @@ impl<'a> Widget for Button<'a> {
                         nw: 0,
                         ne: 0,
                         sw: 0,
-                        se: 6,
+                        se: radius,
                     },
                 },
             };
 
             if button_type == ButtonType::Gradient && !disabled {
-                let color1 = if is_active {
+                let is_really_hover = is_hover && !loading;
+                let is_really_active = is_active && !loading;
+                let color1 = if is_really_active {
                     egui::Color32::from_rgb(105, 54, 245)
-                } else if is_hover {
+                } else if is_really_hover {
                     egui::Color32::from_rgb(149, 117, 255)
                 } else {
                     egui::Color32::from_rgb(105, 54, 245)
                 };
-                let color2 = if is_active {
+                let color2 = if is_really_active {
                     egui::Color32::from_rgb(22, 119, 255)
-                } else if is_hover {
+                } else if is_really_hover {
                     egui::Color32::from_rgb(64, 150, 255)
                 } else {
                     egui::Color32::from_rgb(22, 119, 255)
@@ -463,12 +471,14 @@ impl<'a> Widget for Button<'a> {
             if wave_t > 0.0 && wave_t < 1.0 {
                 let wave_color = if danger { color_error } else { color_primary };
                 let alpha = (1.0 - wave_t) * 0.4;
-                let wave_stroke = egui::Stroke::new(wave_t * 6.0, wave_color.gamma_multiply(alpha));
-                let wave_rect = rect.expand(wave_t * 6.0);
-
-                // Increase corner radius for the expanded rect to keep it looking natural
-                let mut wave_radius = corner_radius;
+                // Match Ant Design: The wave is a halo that expands outwards from the border
+                let wave_stroke_width = 2.0;
+                let wave_stroke = egui::Stroke::new(wave_stroke_width, wave_color.gamma_multiply(alpha));
                 let expansion = wave_t * 6.0;
+                let wave_rect = rect.expand(expansion);
+
+                // Increase corner radius for the expanded rect
+                let mut wave_radius = corner_radius;
                 wave_radius.nw = (wave_radius.nw as f32 + expansion).min(255.0) as u8;
                 wave_radius.ne = (wave_radius.ne as f32 + expansion).min(255.0) as u8;
                 wave_radius.sw = (wave_radius.sw as f32 + expansion).min(255.0) as u8;
