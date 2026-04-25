@@ -119,12 +119,11 @@ impl<'a> Widget for Input<'a> {
             show_count,
         } = self;
 
-        if let Some(max_len) = max_length {
-            if text.chars().count() > max_len {
+        if let Some(max_len) = max_length
+            && text.chars().count() > max_len {
                 let truncated: String = text.chars().take(max_len).collect();
                 *text = truncated;
             }
-        }
 
         let padding = match size {
             InputSize::Large => Vec2::new(11.0, 7.0),
