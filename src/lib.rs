@@ -1,11 +1,15 @@
 pub mod button;
 pub mod config;
-pub mod space;
 pub mod dropdown;
+pub mod input;
+pub mod space;
 pub mod tabs;
 
-pub use config::{ConfigProvider, Theme, ComponentsTheme, ButtonTheme};
-pub use button::{Button, ButtonGroup, ButtonSize, ButtonType, ButtonShape, IconPlacement, ButtonPosition};
-pub use space::{Space, SpaceDirection, SpaceSize, SpaceAlign, SpaceCompact};
+pub use button::{
+    Button, ButtonGroup, ButtonPosition, ButtonShape, ButtonSize, ButtonType, IconPlacement,
+};
+pub use config::{ButtonTheme, ComponentsTheme, ConfigProvider, Theme};
 pub use dropdown::{Dropdown, menu_item};
-pub use tabs::{Tabs, TabPane, TabType, TabPosition, TabSize, TabBarExtraContent, TabEditAction};
+pub use input::{Input, InputNumber, InputSize, InputVariant};
+pub use space::{Space, SpaceAlign, SpaceCompact, SpaceDirection, SpaceSize};
+pub use tabs::{TabBarExtraContent, TabEditAction, TabPane, TabPosition, TabSize, TabType, Tabs};
