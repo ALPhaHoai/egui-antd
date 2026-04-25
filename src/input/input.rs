@@ -126,8 +126,6 @@ impl<'a> Widget for Input<'a> {
             }
         }
 
-        let current_count = text.chars().count();
-
         let padding = match size {
             InputSize::Large => Vec2::new(11.0, 7.0),
             InputSize::Middle => Vec2::new(11.0, 4.0),
@@ -221,10 +219,10 @@ impl<'a> Widget for Input<'a> {
                     } else {
                         format!("{}", current_count)
                     };
-                    
+
                     ui.label(
                         egui::RichText::new(count_text)
-                            .color(Color32::from_rgb(0, 0, 0).linear_multiply(0.45))
+                            .color(Color32::from_rgb(0, 0, 0).linear_multiply(0.45)),
                     );
                 }
 
