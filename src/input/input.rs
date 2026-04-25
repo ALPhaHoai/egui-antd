@@ -179,6 +179,7 @@ impl<'a> Widget for Input<'a> {
                 }
 
                 let mut text_edit = egui::TextEdit::singleline(text)
+                    
                     .text_color(text_color)
                     .min_size(Vec2::new(0.0, height - padding.y * 2.0));
 
