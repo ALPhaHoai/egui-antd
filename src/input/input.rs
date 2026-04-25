@@ -31,6 +31,8 @@ pub struct Input<'a> {
     suffix: Option<Box<dyn FnOnce(&mut Ui)>>, /* FIXME: clippy::type_complexity */
     password: bool,
     allow_clear: bool,
+    max_length: Option<usize>,
+    show_count: bool,
 }
 
 impl<'a> Input<'a> {
@@ -45,6 +47,8 @@ impl<'a> Input<'a> {
             suffix: None,
             password: false,
             allow_clear: false,
+            max_length: None,
+            show_count: false,
         }
     }
 
@@ -87,6 +91,16 @@ impl<'a> Input<'a> {
         self.allow_clear = allow_clear;
         self
     }
+
+    pub fn max_length(mut self, max_length: usize) -> Self {
+        self.max_length = Some(max_length);
+        self
+    }
+
+    pub fn show_count(mut self, show_count: bool) -> Self {
+        self.show_count = show_count;
+        self
+    }
 }
 
 impl<'a> Widget for Input<'a> {
@@ -101,7 +115,18 @@ impl<'a> Widget for Input<'a> {
             suffix,
             password,
             allow_clear,
+            max_length,
+            show_count,
         } = self;
+
+        if let Some(max_len) = max_length {
+            if text.chars().count() > max_len {
+                let truncated: String = text.chars().take(max_len).collect();
+                *text = truncated;
+            }
+        }
+
+        let current_count = text.chars().count();
 
         let padding = match size {
             InputSize::Large => Vec2::new(11.0, 7.0),
@@ -148,8 +173,6 @@ impl<'a> Widget for Input<'a> {
             .fill(bg_color)
             .stroke(stroke);
 
-        // We'll calculate hover and focus states inside the ui block
-
         let response = frame.show(ui, |ui| {
             ui.set_min_height(height - padding.y * 2.0);
 
@@ -176,8 +199,7 @@ impl<'a> Widget for Input<'a> {
                 let text_resp = ui.add_enabled(!disabled, text_edit);
 
                 if allow_clear && !text.is_empty() && !disabled {
-                    // Add clear icon
-                    let clear_icon = "✖"; // Placeholder for actual phosphor icon
+                    let clear_icon = "✖";
                     let clear_btn = ui.add(
                         egui::Label::new(
                             egui::RichText::new(clear_icon)
@@ -192,6 +214,20 @@ impl<'a> Widget for Input<'a> {
                     }
                 }
 
+                if show_count {
+                    let current_count = text.chars().count();
+                    let count_text = if let Some(max_len) = max_length {
+                        format!("{}/{}", current_count, max_len)
+                    } else {
+                        format!("{}", current_count)
+                    };
+                    
+                    ui.label(
+                        egui::RichText::new(count_text)
+                            .color(Color32::from_rgb(0, 0, 0).linear_multiply(0.45))
+                    );
+                }
+
                 if let Some(suffix_fn) = suffix {
                     suffix_fn(ui);
                 }
@@ -201,10 +237,6 @@ impl<'a> Widget for Input<'a> {
             .inner
         });
 
-        // Add focus/hover styling logic
-        // This is a simplified approach, need proper interaction tracking
-
-        // Return the response of the whole frame, not just the text edit
         response.response
     }
 }

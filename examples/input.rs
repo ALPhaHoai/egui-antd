@@ -160,6 +160,13 @@ impl eframe::App for MyApp {
                             ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
                         }
 
+                        if let Some(rect) = demo_card(ui, "#2.5 With Count", "Show character count.", |ui| {
+                            ui.add(Input::new(&mut self.basic_text).hint_text("Basic usage").show_count(true).max_length(20));
+                        }) {
+                            self.pending_screenshot = Some(rect);
+                            ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
+                        }
+
                         if let Some(rect) = demo_card(ui, "#3 Disabled", "Input can be disabled.", |ui| {
                             ui.add(Input::new(&mut self.disabled_text).disabled(true));
                         }) {
