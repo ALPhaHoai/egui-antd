@@ -172,7 +172,7 @@ pub struct SpaceCompactWriter<'a> {
     direction: SpaceDirection,
     block: bool,
     #[allow(clippy::type_complexity)]
-    items: Vec<Box<dyn FnOnce(&mut Ui, ButtonPosition) + 'a>> /* FIXME: clippy::type_complexity */,
+    items: Vec<Box<dyn FnOnce(&mut Ui, ButtonPosition) + 'a>>, /* FIXME: clippy::type_complexity */
 }
 
 impl<'a> SpaceCompactWriter<'a> {

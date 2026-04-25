@@ -26,9 +26,9 @@ pub struct Input<'a> {
     variant: InputVariant,
     disabled: bool,
     #[allow(clippy::type_complexity)]
-    prefix: Option<Box<dyn FnOnce(&mut Ui)>> /* FIXME: clippy::type_complexity */,
+    prefix: Option<Box<dyn FnOnce(&mut Ui)>>, /* FIXME: clippy::type_complexity */
     #[allow(clippy::type_complexity)]
-    suffix: Option<Box<dyn FnOnce(&mut Ui)>> /* FIXME: clippy::type_complexity */,
+    suffix: Option<Box<dyn FnOnce(&mut Ui)>>, /* FIXME: clippy::type_complexity */
     password: bool,
     allow_clear: bool,
 }
