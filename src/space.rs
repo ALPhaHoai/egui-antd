@@ -1,5 +1,5 @@
-use egui::{Ui, Vec2, Layout, Align};
 use crate::button::ButtonPosition;
+use egui::{Align, Layout, Ui, Vec2};
 
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub enum SpaceSize {
@@ -46,6 +46,12 @@ pub struct Space {
     align: Option<SpaceAlign>,
 }
 
+impl Default for Space {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Space {
     pub fn new() -> Self {
         Self {
@@ -86,12 +92,13 @@ impl Space {
 
         let layout = match self.direction {
             SpaceDirection::Horizontal => {
-                let mut l = Layout::left_to_right(match self.align.unwrap_or(SpaceAlign::Baseline) {
-                    SpaceAlign::Start => Align::Min,
-                    SpaceAlign::End => Align::Max,
-                    SpaceAlign::Center => Align::Center,
-                    SpaceAlign::Baseline => Align::Center,
-                });
+                let mut l =
+                    Layout::left_to_right(match self.align.unwrap_or(SpaceAlign::Baseline) {
+                        SpaceAlign::Start => Align::Min,
+                        SpaceAlign::End => Align::Max,
+                        SpaceAlign::Center => Align::Center,
+                        SpaceAlign::Baseline => Align::Center,
+                    });
                 if self.wrap {
                     l = l.with_main_wrap(true);
                 }
@@ -110,7 +117,8 @@ impl Space {
         ui.allocate_ui_with_layout(ui.available_size(), layout, |ui| {
             ui.spacing_mut().item_spacing = Vec2::splat(spacing);
             add_contents(ui)
-        }).inner
+        })
+        .inner
     }
 }
 
@@ -163,7 +171,8 @@ pub struct SpaceCompactWriter<'a> {
     ui: &'a mut Ui,
     direction: SpaceDirection,
     block: bool,
-    items: Vec<Box<dyn FnOnce(&mut Ui, ButtonPosition) + 'a>>,
+    #[allow(clippy::type_complexity)]
+    items: Vec<Box<dyn FnOnce(&mut Ui, ButtonPosition) + 'a>> /* FIXME: clippy::type_complexity */,
 }
 
 impl<'a> SpaceCompactWriter<'a> {
@@ -190,26 +199,27 @@ impl<'a> SpaceCompactWriter<'a> {
             SpaceDirection::Vertical => Layout::top_down(Align::Min),
         };
 
-        self.ui.allocate_ui_with_layout(self.ui.available_size(), layout, |ui| {
-            // Overlap borders by 1px to avoid double borders
-            ui.spacing_mut().item_spacing = match self.direction {
-                SpaceDirection::Horizontal => Vec2::new(-1.0, 0.0),
-                SpaceDirection::Vertical => Vec2::new(0.0, -1.0),
-            };
-
-            let count = self.items.len();
-            for (i, item) in self.items.into_iter().enumerate() {
-                let position = if count <= 1 {
-                    ButtonPosition::None
-                } else if i == 0 {
-                    ButtonPosition::First
-                } else if i == count - 1 {
-                    ButtonPosition::Last
-                } else {
-                    ButtonPosition::Middle
+        self.ui
+            .allocate_ui_with_layout(self.ui.available_size(), layout, |ui| {
+                // Overlap borders by 1px to avoid double borders
+                ui.spacing_mut().item_spacing = match self.direction {
+                    SpaceDirection::Horizontal => Vec2::new(-1.0, 0.0),
+                    SpaceDirection::Vertical => Vec2::new(0.0, -1.0),
                 };
-                item(ui, position);
-            }
-        });
+
+                let count = self.items.len();
+                for (i, item) in self.items.into_iter().enumerate() {
+                    let position = if count <= 1 {
+                        ButtonPosition::None
+                    } else if i == 0 {
+                        ButtonPosition::First
+                    } else if i == count - 1 {
+                        ButtonPosition::Last
+                    } else {
+                        ButtonPosition::Middle
+                    };
+                    item(ui, position);
+                }
+            });
     }
 }

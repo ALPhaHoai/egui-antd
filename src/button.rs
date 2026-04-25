@@ -1,4 +1,4 @@
-use egui::{Response, Ui, Widget, WidgetInfo, WidgetType, CornerRadius};
+use egui::{CornerRadius, Response, Ui, Widget, WidgetInfo, WidgetType};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ButtonType {
@@ -193,10 +193,21 @@ impl<'a> Widget for Button<'a> {
         let color_text = egui::Color32::from_rgba_unmultiplied(0, 0, 0, 224); // 0.88 opacity
         let color_text_disabled = egui::Color32::from_rgba_unmultiplied(0, 0, 0, 64); // 0.25 opacity
 
-        let theme = ui.ctx().data(|d| d.get_temp::<crate::Theme>(egui::Id::new("antd_config_provider_theme")).unwrap_or_default());
+        let theme = ui.ctx().data(|d| {
+            d.get_temp::<crate::Theme>(egui::Id::new("antd_config_provider_theme"))
+                .unwrap_or_default()
+        });
         let default_color_bg_container_disabled = egui::Color32::from_rgb(245, 245, 245);
-        let color_bg_container_disabled_default = theme.components.button.default_bg_disabled.unwrap_or(default_color_bg_container_disabled);
-        let color_bg_container_disabled_dashed = theme.components.button.dashed_bg_disabled.unwrap_or(default_color_bg_container_disabled);
+        let color_bg_container_disabled_default = theme
+            .components
+            .button
+            .default_bg_disabled
+            .unwrap_or(default_color_bg_container_disabled);
+        let color_bg_container_disabled_dashed = theme
+            .components
+            .button
+            .dashed_bg_disabled
+            .unwrap_or(default_color_bg_container_disabled);
 
         let button_padding = match size {
             ButtonSize::Large => egui::vec2(15.0, 7.0),
@@ -215,7 +226,11 @@ impl<'a> Widget for Button<'a> {
 
         // Detect two Chinese characters for special spacing
         let mut display_text = text.clone();
-        if text.chars().count() == 2 && text.chars().all(|c| (0x4E00..=0x9FFF).contains(&(c as u32))) {
+        if text.chars().count() == 2
+            && text
+                .chars()
+                .all(|c| (0x4E00..=0x9FFF).contains(&(c as u32)))
+        {
             let mut chars = text.chars();
             display_text = format!("{}  {}", chars.next().unwrap(), chars.next().unwrap());
         }
@@ -225,7 +240,9 @@ impl<'a> Widget for Button<'a> {
             text_color = color_text_disabled;
         }
 
-        let galley = ui.painter().layout_no_wrap(display_text, font_id.clone(), text_color);
+        let galley = ui
+            .painter()
+            .layout_no_wrap(display_text, font_id.clone(), text_color);
 
         let icon_size = egui::vec2(text_size, text_size);
         let icon_gap = if text.is_empty() { 0.0 } else { 8.0 };
@@ -254,10 +271,12 @@ impl<'a> Widget for Button<'a> {
             response = response.on_hover_cursor(egui::CursorIcon::PointingHand);
         }
 
-        if let Some(href) = &href {
-            if response.clicked() && !disabled && !loading {
-                ui.ctx().open_url(egui::OpenUrl::new_tab(href));
-            }
+        if let Some(href) = &href
+            && response.clicked()
+            && !disabled
+            && !loading
+        {
+            ui.ctx().open_url(egui::OpenUrl::new_tab(href));
         }
 
         if ui.is_rect_visible(rect) {
@@ -265,8 +284,12 @@ impl<'a> Widget for Button<'a> {
             let is_active = response.clicked() || response.dragged();
 
             // Transitions
-            let hover_t = ui.ctx().animate_bool_with_time(response.id.with("hover"), is_hover, 0.1);
-            let _active_t = ui.ctx().animate_bool_with_time(response.id.with("active"), is_active, 0.1);
+            let hover_t = ui
+                .ctx()
+                .animate_bool_with_time(response.id.with("hover"), is_hover, 0.1);
+            let _active_t =
+                ui.ctx()
+                    .animate_bool_with_time(response.id.with("active"), is_active, 0.1);
 
             // Wave effect transition
             let wave_id = response.id.with("wave");
@@ -293,7 +316,10 @@ impl<'a> Widget for Button<'a> {
                 let bg = match button_type {
                     ButtonType::Default => color_bg_container_disabled_default,
                     ButtonType::Dashed => color_bg_container_disabled_dashed,
-                    ButtonType::Primary | ButtonType::Text | ButtonType::Link | ButtonType::Gradient => default_color_bg_container_disabled,
+                    ButtonType::Primary
+                    | ButtonType::Text
+                    | ButtonType::Link
+                    | ButtonType::Gradient => default_color_bg_container_disabled,
                 };
                 (
                     bg,
@@ -304,29 +330,85 @@ impl<'a> Widget for Button<'a> {
                 match button_type {
                     ButtonType::Primary => {
                         let base = if danger { color_error } else { color_primary };
-                        let hover = if danger { color_error_hover } else { color_primary_hover };
-                        let active = if danger { color_error_active } else { color_primary_active };
+                        let hover = if danger {
+                            color_error_hover
+                        } else {
+                            color_primary_hover
+                        };
+                        let active = if danger {
+                            color_error_active
+                        } else {
+                            color_primary_active
+                        };
 
                         if ghost {
-                            let current_color = if is_active { active } else { lerp_color(base, hover, hover_t) };
-                            (egui::Color32::TRANSPARENT, egui::Stroke::new(1.0, current_color), current_color)
+                            let current_color = if is_active {
+                                active
+                            } else {
+                                lerp_color(base, hover, hover_t)
+                            };
+                            (
+                                egui::Color32::TRANSPARENT,
+                                egui::Stroke::new(1.0, current_color),
+                                current_color,
+                            )
                         } else {
-                            let fill = if is_active { active } else { lerp_color(base, hover, hover_t) };
+                            let fill = if is_active {
+                                active
+                            } else {
+                                lerp_color(base, hover, hover_t)
+                            };
                             (fill, egui::Stroke::NONE, egui::Color32::WHITE)
                         }
                     }
                     ButtonType::Default | ButtonType::Dashed => {
-                        let text_base = if danger { color_error } else if ghost { egui::Color32::WHITE } else { color_text };
-                        let text_hover = if danger { color_error_hover } else { color_primary_hover };
-                        let text_active = if danger { color_error_active } else { color_primary_active };
+                        let text_base = if danger {
+                            color_error
+                        } else if ghost {
+                            egui::Color32::WHITE
+                        } else {
+                            color_text
+                        };
+                        let text_hover = if danger {
+                            color_error_hover
+                        } else {
+                            color_primary_hover
+                        };
+                        let text_active = if danger {
+                            color_error_active
+                        } else {
+                            color_primary_active
+                        };
 
-                        let current_text = if is_active { text_active } else { lerp_color(text_base, text_hover, hover_t) };
+                        let current_text = if is_active {
+                            text_active
+                        } else {
+                            lerp_color(text_base, text_hover, hover_t)
+                        };
 
-                        let stroke_base = if danger { color_error } else if ghost { egui::Color32::WHITE } else { color_border };
-                        let stroke_hover = if danger { color_error_hover } else { color_primary_hover };
-                        let stroke_active = if danger { color_error_active } else { color_primary_active };
+                        let stroke_base = if danger {
+                            color_error
+                        } else if ghost {
+                            egui::Color32::WHITE
+                        } else {
+                            color_border
+                        };
+                        let stroke_hover = if danger {
+                            color_error_hover
+                        } else {
+                            color_primary_hover
+                        };
+                        let stroke_active = if danger {
+                            color_error_active
+                        } else {
+                            color_primary_active
+                        };
 
-                        let current_stroke = if is_active { stroke_active } else { lerp_color(stroke_base, stroke_hover, hover_t) };
+                        let current_stroke = if is_active {
+                            stroke_active
+                        } else {
+                            lerp_color(stroke_base, stroke_hover, hover_t)
+                        };
 
                         let bg = if ghost {
                             egui::Color32::TRANSPARENT
@@ -338,20 +420,48 @@ impl<'a> Widget for Button<'a> {
                     }
                     ButtonType::Link => {
                         let base = if danger { color_error } else { color_primary };
-                        let hover = if danger { color_error_hover } else { color_primary_hover };
-                        let active = if danger { color_error_active } else { color_primary_active };
+                        let hover = if danger {
+                            color_error_hover
+                        } else {
+                            color_primary_hover
+                        };
+                        let active = if danger {
+                            color_error_active
+                        } else {
+                            color_primary_active
+                        };
 
-                        let current_text = if is_active { active } else { lerp_color(base, hover, hover_t) };
+                        let current_text = if is_active {
+                            active
+                        } else {
+                            lerp_color(base, hover, hover_t)
+                        };
                         (egui::Color32::TRANSPARENT, egui::Stroke::NONE, current_text)
                     }
                     ButtonType::Text => {
                         let text_base = if danger { color_error } else { color_text };
-                        let text_hover = if danger { color_error_hover } else { color_text };
-                        let text_active = if danger { color_error_active } else { color_text };
+                        let text_hover = if danger {
+                            color_error_hover
+                        } else {
+                            color_text
+                        };
+                        let text_active = if danger {
+                            color_error_active
+                        } else {
+                            color_text
+                        };
 
-                        let current_text = if is_active { text_active } else { lerp_color(text_base, text_hover, hover_t) };
+                        let current_text = if is_active {
+                            text_active
+                        } else {
+                            lerp_color(text_base, text_hover, hover_t)
+                        };
 
-                        let bg_alpha = if is_active { 15 } else { (hover_t * 10.0) as u8 };
+                        let bg_alpha = if is_active {
+                            15
+                        } else {
+                            (hover_t * 10.0) as u8
+                        };
                         let bg = egui::Color32::from_rgba_unmultiplied(0, 0, 0, bg_alpha);
                         (bg, egui::Stroke::NONE, current_text)
                     }
@@ -473,7 +583,8 @@ impl<'a> Widget for Button<'a> {
                 let alpha = (1.0 - wave_t) * 0.4;
                 // Match Ant Design: The wave is a halo that expands outwards from the border
                 let wave_stroke_width = 2.0;
-                let wave_stroke = egui::Stroke::new(wave_stroke_width, wave_color.gamma_multiply(alpha));
+                let wave_stroke =
+                    egui::Stroke::new(wave_stroke_width, wave_color.gamma_multiply(alpha));
                 let expansion = wave_t * 6.0;
                 let wave_rect = rect.expand(expansion);
 
@@ -484,7 +595,12 @@ impl<'a> Widget for Button<'a> {
                 wave_radius.sw = (wave_radius.sw as f32 + expansion).min(255.0) as u8;
                 wave_radius.se = (wave_radius.se as f32 + expansion).min(255.0) as u8;
 
-                ui.painter().rect_stroke(wave_rect, wave_radius, wave_stroke, egui::StrokeKind::Outside);
+                ui.painter().rect_stroke(
+                    wave_rect,
+                    wave_radius,
+                    wave_stroke,
+                    egui::StrokeKind::Outside,
+                );
             }
 
             let mut content_width = galley.size().x;
@@ -492,7 +608,8 @@ impl<'a> Widget for Button<'a> {
                 content_width += icon_size.x + icon_gap;
             }
 
-            let mut text_pos = rect.center() - egui::vec2(content_width / 2.0, galley.size().y / 2.0);
+            let mut text_pos =
+                rect.center() - egui::vec2(content_width / 2.0, galley.size().y / 2.0);
             let galley_height = galley.size().y;
 
             let paint_icon = |ui: &mut Ui, pos: egui::Pos2| {
@@ -503,7 +620,10 @@ impl<'a> Widget for Button<'a> {
                     );
 
                     if let Some(loading_icon) = &loading_icon {
-                        loading_icon.clone().tint(text_color).paint_at(ui, spinner_rect);
+                        loading_icon
+                            .clone()
+                            .tint(text_color)
+                            .paint_at(ui, spinner_rect);
                     } else {
                         // Draw a simple spinner
                         let angle = ui.input(|i| i.time as f32 * 6.0);
@@ -520,8 +640,10 @@ impl<'a> Widget for Button<'a> {
                             })
                             .collect();
 
-                        ui.painter()
-                            .add(egui::Shape::line(points, egui::Stroke::new(2.0, text_color)));
+                        ui.painter().add(egui::Shape::line(
+                            points,
+                            egui::Stroke::new(2.0, text_color),
+                        ));
                     }
                 } else if let Some(image) = &image {
                     let icon_rect = egui::Rect::from_center_size(
@@ -530,9 +652,17 @@ impl<'a> Widget for Button<'a> {
                     );
                     image.clone().tint(text_color).paint_at(ui, icon_rect);
                 } else if let Some(icon) = &icon {
-                     let icon_galley = ui.painter().layout_no_wrap(icon.text().to_string(), font_id.clone(), text_color);
-                     let icon_pos = pos + egui::vec2(icon_size.x / 2.0 - icon_galley.size().x / 2.0, galley_height / 2.0 - icon_galley.size().y / 2.0);
-                     ui.painter().galley(icon_pos, icon_galley, text_color);
+                    let icon_galley = ui.painter().layout_no_wrap(
+                        icon.text().to_string(),
+                        font_id.clone(),
+                        text_color,
+                    );
+                    let icon_pos = pos
+                        + egui::vec2(
+                            icon_size.x / 2.0 - icon_galley.size().x / 2.0,
+                            galley_height / 2.0 - icon_galley.size().y / 2.0,
+                        );
+                    ui.painter().galley(icon_pos, icon_galley, text_color);
                 }
             };
 
@@ -542,11 +672,13 @@ impl<'a> Widget for Button<'a> {
                         paint_icon(ui, text_pos);
                         text_pos.x += icon_size.x + icon_gap;
                     }
-                    ui.painter().galley_with_override_text_color(text_pos, galley, text_color);
+                    ui.painter()
+                        .galley_with_override_text_color(text_pos, galley, text_color);
                 }
                 IconPlacement::End => {
                     let mut text_draw_pos = text_pos;
-                    ui.painter().galley_with_override_text_color(text_draw_pos, galley, text_color);
+                    ui.painter()
+                        .galley_with_override_text_color(text_draw_pos, galley, text_color);
                     if has_icon {
                         text_draw_pos.x += content_width - icon_size.x;
                         paint_icon(ui, text_draw_pos);
@@ -562,6 +694,12 @@ impl<'a> Widget for Button<'a> {
 
 pub struct ButtonGroup {
     size: Option<ButtonSize>,
+}
+
+impl Default for ButtonGroup {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl ButtonGroup {
@@ -641,21 +779,86 @@ fn paint_dashed_rect(
     let se = corner_radius.se as f32;
 
     // Top
-    paint_dashed_line(painter, rect.left_top() + egui::vec2(nw, 0.0), rect.right_top() - egui::vec2(ne, 0.0), stroke, dash_length, gap_length);
+    paint_dashed_line(
+        painter,
+        rect.left_top() + egui::vec2(nw, 0.0),
+        rect.right_top() - egui::vec2(ne, 0.0),
+        stroke,
+        dash_length,
+        gap_length,
+    );
     // Bottom
-    paint_dashed_line(painter, rect.left_bottom() + egui::vec2(sw, 0.0), rect.right_bottom() - egui::vec2(se, 0.0), stroke, dash_length, gap_length);
+    paint_dashed_line(
+        painter,
+        rect.left_bottom() + egui::vec2(sw, 0.0),
+        rect.right_bottom() - egui::vec2(se, 0.0),
+        stroke,
+        dash_length,
+        gap_length,
+    );
     // Left
-    paint_dashed_line(painter, rect.left_top() + egui::vec2(0.0, nw), rect.left_bottom() - egui::vec2(0.0, sw), stroke, dash_length, gap_length);
+    paint_dashed_line(
+        painter,
+        rect.left_top() + egui::vec2(0.0, nw),
+        rect.left_bottom() - egui::vec2(0.0, sw),
+        stroke,
+        dash_length,
+        gap_length,
+    );
     // Right
-    paint_dashed_line(painter, rect.right_top() + egui::vec2(0.0, ne), rect.right_bottom() - egui::vec2(0.0, se), stroke, dash_length, gap_length);
+    paint_dashed_line(
+        painter,
+        rect.right_top() + egui::vec2(0.0, ne),
+        rect.right_bottom() - egui::vec2(0.0, se),
+        stroke,
+        dash_length,
+        gap_length,
+    );
 
     // Corners
-    paint_dashed_arc(painter, rect.left_top() + egui::vec2(nw, nw), nw, std::f32::consts::PI, 1.5 * std::f32::consts::PI, stroke, dash_length, gap_length);
-    paint_dashed_arc(painter, rect.right_top() + egui::vec2(-ne, ne), ne, 1.5 * std::f32::consts::PI, 2.0 * std::f32::consts::PI, stroke, dash_length, gap_length);
-    paint_dashed_arc(painter, rect.right_bottom() + egui::vec2(-se, -se), se, 0.0, 0.5 * std::f32::consts::PI, stroke, dash_length, gap_length);
-    paint_dashed_arc(painter, rect.left_bottom() + egui::vec2(sw, -sw), sw, 0.5 * std::f32::consts::PI, std::f32::consts::PI, stroke, dash_length, gap_length);
+    paint_dashed_arc(
+        painter,
+        rect.left_top() + egui::vec2(nw, nw),
+        nw,
+        std::f32::consts::PI,
+        1.5 * std::f32::consts::PI,
+        stroke,
+        dash_length,
+        gap_length,
+    );
+    paint_dashed_arc(
+        painter,
+        rect.right_top() + egui::vec2(-ne, ne),
+        ne,
+        1.5 * std::f32::consts::PI,
+        2.0 * std::f32::consts::PI,
+        stroke,
+        dash_length,
+        gap_length,
+    );
+    paint_dashed_arc(
+        painter,
+        rect.right_bottom() + egui::vec2(-se, -se),
+        se,
+        0.0,
+        0.5 * std::f32::consts::PI,
+        stroke,
+        dash_length,
+        gap_length,
+    );
+    paint_dashed_arc(
+        painter,
+        rect.left_bottom() + egui::vec2(sw, -sw),
+        sw,
+        0.5 * std::f32::consts::PI,
+        std::f32::consts::PI,
+        stroke,
+        dash_length,
+        gap_length,
+    );
 }
 
+#[allow(clippy::too_many_arguments)]
 fn paint_dashed_arc(
     painter: &egui::Painter,
     center: egui::Pos2,
@@ -666,7 +869,9 @@ fn paint_dashed_arc(
     dash_length: f32,
     gap_length: f32,
 ) {
-    if radius <= 0.0 { return; }
+    if radius <= 0.0 {
+        return;
+    }
     let arc_length = (end_angle - start_angle).abs() * radius;
     let mut current_dist = 0.0;
 
@@ -720,10 +925,26 @@ fn create_gradient_mesh(
 
     // Simple 4-vertex mesh for the gradient
     // Clipping handles the rounding
-    mesh.vertices.push(egui::epaint::Vertex { pos: rect.left_top(), uv: egui::epaint::WHITE_UV, color: color1 });
-    mesh.vertices.push(egui::epaint::Vertex { pos: rect.right_top(), uv: egui::epaint::WHITE_UV, color: color2 });
-    mesh.vertices.push(egui::epaint::Vertex { pos: rect.right_bottom(), uv: egui::epaint::WHITE_UV, color: color2 });
-    mesh.vertices.push(egui::epaint::Vertex { pos: rect.left_bottom(), uv: egui::epaint::WHITE_UV, color: color1 });
+    mesh.vertices.push(egui::epaint::Vertex {
+        pos: rect.left_top(),
+        uv: egui::epaint::WHITE_UV,
+        color: color1,
+    });
+    mesh.vertices.push(egui::epaint::Vertex {
+        pos: rect.right_top(),
+        uv: egui::epaint::WHITE_UV,
+        color: color2,
+    });
+    mesh.vertices.push(egui::epaint::Vertex {
+        pos: rect.right_bottom(),
+        uv: egui::epaint::WHITE_UV,
+        color: color2,
+    });
+    mesh.vertices.push(egui::epaint::Vertex {
+        pos: rect.left_bottom(),
+        uv: egui::epaint::WHITE_UV,
+        color: color1,
+    });
     mesh.indices.extend([0, 1, 2, 0, 2, 3]);
 
     mesh

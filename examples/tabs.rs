@@ -1,5 +1,8 @@
 use eframe::egui;
-use egui_antd::{Tabs, TabPane, TabType, TabPosition, TabSize, TabBarExtraContent, TabEditAction, Button, ButtonType, ButtonSize};
+use egui_antd::{
+    Button, ButtonSize, ButtonType, TabBarExtraContent, TabEditAction, TabPane, TabPosition,
+    TabSize, TabType, Tabs,
+};
 
 fn main() -> eframe::Result {
     let options = eframe::NativeOptions {
@@ -74,7 +77,8 @@ fn show_demo_ext(
 ) {
     if let Some(rect) = demo_card(ui, title, desc, no_padding, content) {
         *pending_screenshot = Some(rect);
-        ui.ctx().send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
+        ui.ctx()
+            .send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
     }
 }
 
@@ -115,14 +119,16 @@ impl eframe::App for MyApp {
                     let h = h.min(image.height() - y);
 
                     if w > 0 && h > 0 {
-                        let mut cropped = egui::ColorImage::new([w, h], vec![egui::Color32::BLACK; w * h]);
+                        let mut cropped =
+                            egui::ColorImage::new([w, h], vec![egui::Color32::BLACK; w * h]);
                         for cy in 0..h {
                             for cx in 0..w {
                                 cropped[(cx, cy)] = image[(x + cx, y + cy)];
                             }
                         }
 
-                        let pixels: Vec<u8> = cropped.pixels
+                        let pixels: Vec<u8> = cropped
+                            .pixels
                             .iter()
                             .flat_map(|color| [color.r(), color.g(), color.b(), color.a()])
                             .collect();
@@ -381,7 +387,13 @@ impl eframe::App for MyApp {
     }
 }
 
-fn demo_card(ui: &mut egui::Ui, title: &str, desc: &str, no_padding: bool, content: impl FnOnce(&mut egui::Ui)) -> Option<egui::Rect> {
+fn demo_card(
+    ui: &mut egui::Ui,
+    title: &str,
+    desc: &str,
+    no_padding: bool,
+    content: impl FnOnce(&mut egui::Ui),
+) -> Option<egui::Rect> {
     let mut screenshot_rect = None;
 
     let success_id = ui.id().with("screenshot_success").with(title);
@@ -400,56 +412,70 @@ fn demo_card(ui: &mut egui::Ui, title: &str, desc: &str, no_padding: bool, conte
             egui::Frame::group(ui.style())
         };
 
-        let response = frame.show(ui, |ui| {
-            ui.set_width(ui.available_width());
+        let response = frame
+            .show(ui, |ui| {
+                ui.set_width(ui.available_width());
 
-            // Demo Content (Top)
-            if !no_padding {
-                ui.add_space(8.0);
-            }
-            content(ui);
-            if !no_padding {
-                ui.add_space(8.0);
-            }
-
-            ui.separator();
-
-            // Meta Info (Bottom)
-            ui.horizontal(|ui| {
-                if no_padding {
+                // Demo Content (Top)
+                if !no_padding {
                     ui.add_space(8.0);
                 }
-                ui.strong(title);
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                content(ui);
+                if !no_padding {
+                    ui.add_space(8.0);
+                }
+
+                ui.separator();
+
+                // Meta Info (Bottom)
+                ui.horizontal(|ui| {
                     if no_padding {
                         ui.add_space(8.0);
                     }
-                    let (icon, color, tooltip) = if is_success {
-                        (egui_phosphor::regular::CHECK, egui::Color32::from_rgb(82, 196, 26), "Copied!")
-                    } else {
-                        (egui_phosphor::regular::CAMERA, egui::Color32::from_gray(150), "Copy screenshot to clipboard")
-                    };
+                    ui.strong(title);
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        if no_padding {
+                            ui.add_space(8.0);
+                        }
+                        let (icon, color, tooltip) = if is_success {
+                            (
+                                egui_phosphor::regular::CHECK,
+                                egui::Color32::from_rgb(82, 196, 26),
+                                "Copied!",
+                            )
+                        } else {
+                            (
+                                egui_phosphor::regular::CAMERA,
+                                egui::Color32::from_gray(150),
+                                "Copy screenshot to clipboard",
+                            )
+                        };
 
-                    let btn = Button::new("")
-                        .button_type(ButtonType::Text)
-                        .size(ButtonSize::Small)
-                        .icon(egui::RichText::new(icon).size(16.0).color(color));
+                        let btn = Button::new("")
+                            .button_type(ButtonType::Text)
+                            .size(ButtonSize::Small)
+                            .icon(egui::RichText::new(icon).size(16.0).color(color));
 
-                    if ui.add(btn).on_hover_text(tooltip).clicked() {
-                        ui.ctx().data_mut(|d| d.insert_temp(success_id, now));
-                        screenshot_rect = Some(egui::Rect::NOTHING);
-                    }
+                        if ui.add(btn).on_hover_text(tooltip).clicked() {
+                            ui.ctx().data_mut(|d| d.insert_temp(success_id, now));
+                            screenshot_rect = Some(egui::Rect::NOTHING);
+                        }
+                    });
                 });
-            });
-            ui.add_space(4.0);
-            ui.horizontal(|ui| {
-                if no_padding {
-                    ui.add_space(8.0);
-                }
-                ui.label(egui::RichText::new(desc).size(12.0).color(egui::Color32::from_gray(120)));
-            });
-            ui.add_space(4.0);
-        }).response;
+                ui.add_space(4.0);
+                ui.horizontal(|ui| {
+                    if no_padding {
+                        ui.add_space(8.0);
+                    }
+                    ui.label(
+                        egui::RichText::new(desc)
+                            .size(12.0)
+                            .color(egui::Color32::from_gray(120)),
+                    );
+                });
+                ui.add_space(4.0);
+            })
+            .response;
 
         if screenshot_rect.is_some() {
             screenshot_rect = Some(response.rect);

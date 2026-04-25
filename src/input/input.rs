@@ -1,32 +1,22 @@
 use egui::{Color32, CornerRadius, Response, Sense, Stroke, Ui, Vec2, Widget};
 
 /// Size options for the input component
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum InputSize {
     Large,
+    #[default]
     Middle,
     Small,
 }
 
-impl Default for InputSize {
-    fn default() -> Self {
-        Self::Middle
-    }
-}
-
 /// Visual variants for the input component
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum InputVariant {
+    #[default]
     Outlined,
     Borderless,
     Filled,
     Underlined,
-}
-
-impl Default for InputVariant {
-    fn default() -> Self {
-        Self::Outlined
-    }
 }
 
 pub struct Input<'a> {
@@ -35,8 +25,10 @@ pub struct Input<'a> {
     size: InputSize,
     variant: InputVariant,
     disabled: bool,
-    prefix: Option<Box<dyn FnOnce(&mut Ui)>>,
-    suffix: Option<Box<dyn FnOnce(&mut Ui)>>,
+    #[allow(clippy::type_complexity)]
+    prefix: Option<Box<dyn FnOnce(&mut Ui)>> /* FIXME: clippy::type_complexity */,
+    #[allow(clippy::type_complexity)]
+    suffix: Option<Box<dyn FnOnce(&mut Ui)>> /* FIXME: clippy::type_complexity */,
     password: bool,
     allow_clear: bool,
 }
@@ -123,9 +115,7 @@ impl<'a> Widget for Input<'a> {
             InputSize::Small => 24.0,
         };
 
-        let bg_color = if disabled {
-            Color32::from_rgb(245, 245, 245)
-        } else if variant == InputVariant::Filled {
+        let bg_color = if disabled || variant == InputVariant::Filled {
             Color32::from_rgb(245, 245, 245)
         } else if variant == InputVariant::Borderless {
             Color32::TRANSPARENT
@@ -134,11 +124,7 @@ impl<'a> Widget for Input<'a> {
         };
 
         let stroke = if variant == InputVariant::Outlined || variant == InputVariant::Underlined {
-            if disabled {
-                Stroke::new(1.0, Color32::from_rgb(217, 217, 217))
-            } else {
-                Stroke::new(1.0, Color32::from_rgb(217, 217, 217)) // Default border
-            }
+            Stroke::new(1.0, Color32::from_rgb(217, 217, 217))
         } else {
             Stroke::NONE
         };
@@ -217,7 +203,6 @@ impl<'a> Widget for Input<'a> {
 
         // Add focus/hover styling logic
         // This is a simplified approach, need proper interaction tracking
-        
 
         // Return the response of the whole frame, not just the text edit
         response.response

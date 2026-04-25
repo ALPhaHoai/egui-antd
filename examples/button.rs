@@ -1,5 +1,8 @@
-use egui_antd::{Button, ButtonGroup, ButtonSize, ButtonType, ButtonShape, ConfigProvider, Theme, ComponentsTheme, ButtonTheme, Dropdown, menu_item, Space, SpaceCompact};
 use eframe::egui;
+use egui_antd::{
+    Button, ButtonGroup, ButtonShape, ButtonSize, ButtonTheme, ButtonType, ComponentsTheme,
+    ConfigProvider, Dropdown, Space, SpaceCompact, Theme, menu_item,
+};
 
 fn main() -> eframe::Result {
     let options = eframe::NativeOptions {
@@ -79,7 +82,8 @@ impl eframe::App for MyApp {
                     let h = h.min(image.height() - y);
 
                     if w > 0 && h > 0 {
-                        let mut cropped = egui::ColorImage::new([w, h], vec![egui::Color32::BLACK; w * h]);
+                        let mut cropped =
+                            egui::ColorImage::new([w, h], vec![egui::Color32::BLACK; w * h]);
                         for cy in 0..h {
                             for cx in 0..w {
                                 cropped[(cx, cy)] = image[(x + cx, y + cy)];
@@ -87,7 +91,8 @@ impl eframe::App for MyApp {
                         }
 
                         // Copy to clipboard
-                        let pixels: Vec<u8> = cropped.pixels
+                        let pixels: Vec<u8> = cropped
+                            .pixels
                             .iter()
                             .flat_map(|color| [color.r(), color.g(), color.b(), color.a()])
                             .collect();
@@ -415,7 +420,12 @@ impl eframe::App for MyApp {
     }
 }
 
-fn demo_card(ui: &mut egui::Ui, title: &str, desc: &str, content: impl FnOnce(&mut egui::Ui)) -> Option<egui::Rect> {
+fn demo_card(
+    ui: &mut egui::Ui,
+    title: &str,
+    desc: &str,
+    content: impl FnOnce(&mut egui::Ui),
+) -> Option<egui::Rect> {
     let mut screenshot_rect = None;
 
     // Feedback state
@@ -429,48 +439,67 @@ fn demo_card(ui: &mut egui::Ui, title: &str, desc: &str, content: impl FnOnce(&m
     }
 
     ui.vertical(|ui| {
-        let response = ui.group(|ui| {
-            ui.set_width(ui.available_width());
+        let response = ui
+            .group(|ui| {
+                ui.set_width(ui.available_width());
 
-            // Demo Content (Top)
-            ui.add_space(8.0);
-            content(ui);
-            ui.add_space(8.0);
+                // Demo Content (Top)
+                ui.add_space(8.0);
+                content(ui);
+                ui.add_space(8.0);
 
-            ui.separator();
+                ui.separator();
 
-            // Meta Info (Bottom)
-            ui.horizontal(|ui| {
-                ui.strong(title);
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    let (icon, color, tooltip) = if is_success {
-                        (egui_phosphor::regular::CHECK, egui::Color32::from_rgb(82, 196, 26), "Copied!")
-                    } else {
-                        (egui_phosphor::regular::CAMERA, egui::Color32::from_gray(150), "Copy screenshot to clipboard")
-                    };
+                // Meta Info (Bottom)
+                ui.horizontal(|ui| {
+                    ui.strong(title);
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        let (icon, color, tooltip) = if is_success {
+                            (
+                                egui_phosphor::regular::CHECK,
+                                egui::Color32::from_rgb(82, 196, 26),
+                                "Copied!",
+                            )
+                        } else {
+                            (
+                                egui_phosphor::regular::CAMERA,
+                                egui::Color32::from_gray(150),
+                                "Copy screenshot to clipboard",
+                            )
+                        };
 
-                    let btn = Button::new("")
-                        .button_type(ButtonType::Text)
-                        .size(ButtonSize::Small)
-                        .icon(egui::RichText::new(icon).size(16.0).color(color));
+                        let btn = Button::new("")
+                            .button_type(ButtonType::Text)
+                            .size(ButtonSize::Small)
+                            .icon(egui::RichText::new(icon).size(16.0).color(color));
 
-                    if ui.add(btn).on_hover_text(tooltip).clicked() {
-                        ui.ctx().data_mut(|d| d.insert_temp(success_id, now));
-                        screenshot_rect = Some(egui::Rect::NOTHING); // Flag for capture
-                    }
+                        if ui.add(btn).on_hover_text(tooltip).clicked() {
+                            ui.ctx().data_mut(|d| d.insert_temp(success_id, now));
+                            screenshot_rect = Some(egui::Rect::NOTHING); // Flag for capture
+                        }
 
-                    // Add a "Code" icon to match Ant Design's style
-                    let code_btn = Button::new("")
-                        .button_type(ButtonType::Text)
-                        .size(ButtonSize::Small)
-                        .icon(egui::RichText::new(egui_phosphor::regular::CODE).size(16.0).color(egui::Color32::from_gray(150)));
-                    ui.add(code_btn).on_hover_text("View code (Not implemented)");
+                        // Add a "Code" icon to match Ant Design's style
+                        let code_btn = Button::new("")
+                            .button_type(ButtonType::Text)
+                            .size(ButtonSize::Small)
+                            .icon(
+                                egui::RichText::new(egui_phosphor::regular::CODE)
+                                    .size(16.0)
+                                    .color(egui::Color32::from_gray(150)),
+                            );
+                        ui.add(code_btn)
+                            .on_hover_text("View code (Not implemented)");
+                    });
                 });
-            });
-            ui.add_space(4.0);
-            ui.label(egui::RichText::new(desc).size(12.0).color(egui::Color32::from_gray(120)));
-            ui.add_space(4.0);
-        }).response;
+                ui.add_space(4.0);
+                ui.label(
+                    egui::RichText::new(desc)
+                        .size(12.0)
+                        .color(egui::Color32::from_gray(120)),
+                );
+                ui.add_space(4.0);
+            })
+            .response;
 
         // If the button inside was clicked, we want the rect of the entire group
         if screenshot_rect.is_some() {

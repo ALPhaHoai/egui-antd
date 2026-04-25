@@ -1,5 +1,5 @@
-use egui::{Id, Response, Ui};
 use crate::button::Button;
+use egui::{Id, Response, Ui};
 
 pub struct Dropdown<'a> {
     id: Id,
@@ -48,10 +48,15 @@ pub fn menu_item(ui: &mut Ui, text: impl Into<egui::WidgetText>) -> Response {
     let color_text = egui::Color32::from_rgba_unmultiplied(0, 0, 0, 224);
     let color_bg_hover = egui::Color32::from_rgba_unmultiplied(0, 0, 0, 10); // ~rgba(0,0,0,0.04)
 
-    let galley = ui.painter().layout_no_wrap(text.text().to_string(), font_id, color_text);
+    let galley = ui
+        .painter()
+        .layout_no_wrap(text.text().to_string(), font_id, color_text);
     let desired_size = galley.size() + 2.0 * padding;
 
-    let (rect, response) = ui.allocate_at_least(egui::vec2(ui.available_width(), desired_size.y), egui::Sense::click());
+    let (rect, response) = ui.allocate_at_least(
+        egui::vec2(ui.available_width(), desired_size.y),
+        egui::Sense::click(),
+    );
 
     if ui.is_rect_visible(rect) {
         let is_hover = response.hovered();
@@ -62,7 +67,8 @@ pub fn menu_item(ui: &mut Ui, text: impl Into<egui::WidgetText>) -> Response {
         };
 
         if is_hover {
-            ui.painter().rect_filled(rect, egui::CornerRadius::same(4), bg_fill);
+            ui.painter()
+                .rect_filled(rect, egui::CornerRadius::same(4), bg_fill);
         }
 
         let text_pos = rect.left_center() + egui::vec2(padding.x, -galley.size().y / 2.0);
