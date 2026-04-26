@@ -4,6 +4,7 @@ A port of [Ant Design](https://ant.design/) components to [egui](https://github.
 
 Currently implemented:
 - [Button](https://ant.design/components/button)
+- [Input](https://ant.design/components/input)
 - [Space](https://ant.design/components/space)
 - [Tabs](https://ant.design/components/tabs)
 - [Dropdown](https://ant.design/components/dropdown)
@@ -21,6 +22,25 @@ Currently implemented:
 - **Icons**: Supports both text-based icons (emojis) and graphical icons (`egui::Image` via SVG/PNG).
 - **Typography**: Automatic spacing for two-character Chinese strings (e.g., "确认" -> "确 认").
 - **Groups**: `ButtonGroup` for cohesive multi-button layouts.
+
+## Input Features
+
+- **Components**: `Input`, `InputNumber`, `Password`, `Search`, `TextArea`, `OTP`, `InputGroup`
+- **Sizes**: `Large` (40px), `Middle` (32px), `Small` (24px)
+- **Variants**: `Outlined`, `Filled`, `Borderless`, `Underlined`
+- **Status**: `Normal`, `Error`, `Warning` with matching border colors
+- **Features**:
+  - `prefix` / `suffix`: Custom widgets inside the input
+  - `addon_before` / `addon_after`: Grouped addon sections
+  - `allow_clear`: Clear icon to reset the input
+  - `show_count` / `max_length`: Character counting
+  - `disabled`, `read_only`
+- **InputNumber**: Text input with up/down spinner controls, min/max clamping, keyboard arrow support
+- **Password**: Visibility toggle, clear support
+- **Search**: Search icon suffix, optional `enter_button` with primary button style
+- **TextArea**: Multiline input with `auto_size(min_rows, max_rows)`, clear icon, character count
+- **OTP**: One-time password input with configurable `length`, `mask`, `formatter`, and custom `separator`
+- **InputGroup**: Group multiple inputs with optional `compact` mode
 
 ## Space Features
 
@@ -63,6 +83,41 @@ ui.add(
 );
 ```
 
+### Input Example
+
+```rust
+use egui_antd::{Input, InputSize, InputVariant, Search, Password, TextArea};
+
+let mut text = String::new();
+
+// Basic input with prefix/suffix
+ui.add(
+    Input::new(&mut text)
+        .hint_text("Enter username")
+        .size(InputSize::Large)
+        .prefix(|ui| { ui.label("@"); })
+        .allow_clear(true),
+);
+
+// Search with enter button
+ui.add(
+    Search::new(&mut text)
+        .hint_text("Search...")
+        .enter_button_text("Search"),
+);
+
+// Password
+ui.add(Password::new(&mut text).hint_text("Password"));
+
+// TextArea with auto-sizing and character count
+ui.add(
+    TextArea::new(&mut text)
+        .auto_size(2, Some(6))
+        .show_count(true)
+        .max_length(200),
+);
+```
+
 ### Tabs Example
 
 ```rust
@@ -88,6 +143,7 @@ Tabs::new("my_tabs")
 
 ```bash
 cargo run --example button
+cargo run --example input
 cargo run --example tabs
 ```
 
