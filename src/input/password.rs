@@ -1,4 +1,4 @@
-use egui::{Response, Ui, Widget};
+use egui::{Color32, Response, Sense, Ui, Widget};
 
 use crate::input::{Input, InputSize, InputVariant};
 
@@ -9,6 +9,7 @@ pub struct Password<'a> {
     variant: InputVariant,
     disabled: bool,
     visibility_toggle: bool,
+    allow_clear: bool,
 }
 
 impl<'a> Password<'a> {
@@ -20,6 +21,7 @@ impl<'a> Password<'a> {
             variant: InputVariant::Outlined,
             disabled: false,
             visibility_toggle: true,
+            allow_clear: false,
         }
     }
 
@@ -47,6 +49,11 @@ impl<'a> Password<'a> {
         self.visibility_toggle = visibility_toggle;
         self
     }
+
+    pub fn allow_clear(mut self, allow_clear: bool) -> Self {
+        self.allow_clear = allow_clear;
+        self
+    }
 }
 
 impl<'a> Widget for Password<'a> {
@@ -58,7 +65,8 @@ impl<'a> Widget for Password<'a> {
             .size(self.size)
             .variant(self.variant)
             .disabled(self.disabled)
-            .password(!visible);
+            .password(!visible)
+            .allow_clear(self.allow_clear);
 
         if let Some(hint_text) = self.hint_text {
             input = input.hint_text(hint_text);
@@ -66,12 +74,19 @@ impl<'a> Widget for Password<'a> {
 
         if self.visibility_toggle {
             input = input.suffix(Box::new(move |ui: &mut Ui| {
-                let icon = if visible { "👁" } else { "🙈" };
-                let response = ui.label(icon).interact(egui::Sense::click());
+                let icon = if visible { "⊙" } else { "⊘" };
+                let response = ui
+                    .add(
+                        egui::Label::new(
+                            egui::RichText::new(icon)
+                                .color(Color32::from_rgb(0, 0, 0).linear_multiply(0.45)),
+                        )
+                        .sense(Sense::click()),
+                    );
                 if response.clicked() {
                     visible = !visible;
+                    ui.data_mut(|d| d.insert_temp(id, visible));
                 }
-                ui.data_mut(|d| d.insert_temp(id, visible));
             }));
         }
 

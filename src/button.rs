@@ -263,6 +263,22 @@ impl<'a> Widget for Button<'a> {
             desired_size = egui::vec2(side, side);
         }
 
+        // When the button is part of a horizontal input group (Search button,
+        // addon-style grouping, Space.Compact), match the paired Input's height
+        // so the borders align flush.
+        let in_horizontal_group = matches!(
+            position,
+            ButtonPosition::First | ButtonPosition::Middle | ButtonPosition::Last
+        );
+        if in_horizontal_group {
+            let group_height = match size {
+                ButtonSize::Large => 40.0,
+                ButtonSize::Middle => 32.0,
+                ButtonSize::Small => 24.0,
+            };
+            desired_size.y = desired_size.y.max(group_height);
+        }
+
         let (rect, mut response) = ui.allocate_at_least(desired_size, egui::Sense::click());
 
         if disabled || loading {

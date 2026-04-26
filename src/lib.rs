@@ -9,7 +9,10 @@ pub use button::{
     Button, ButtonGroup, ButtonPosition, ButtonShape, ButtonSize, ButtonType, IconPlacement,
 };
 pub use config::{ButtonTheme, ComponentsTheme, ConfigProvider, Theme};
-pub use dropdown::{Dropdown, menu_item};
-pub use input::{Input, InputNumber, InputSize, InputVariant};
+pub use dropdown::{menu_item, Dropdown};
+pub use input::{
+    Input, InputGroup, InputNumber, InputSize, InputStatus, InputVariant, Password, Search,
+    TextArea, OTP,
+};
 pub use space::{Space, SpaceAlign, SpaceCompact, SpaceDirection, SpaceSize};
 pub use tabs::{TabBarExtraContent, TabEditAction, TabPane, TabPosition, TabSize, TabType, Tabs};
