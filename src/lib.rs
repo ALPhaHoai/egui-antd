@@ -1,4 +1,5 @@
 pub mod button;
+pub mod checkbox;
 pub mod config;
 pub mod dropdown;
 pub mod input;
@@ -8,6 +9,7 @@ pub mod tabs;
 pub use button::{
     Button, ButtonGroup, ButtonPosition, ButtonShape, ButtonSize, ButtonType, IconPlacement,
 };
+pub use checkbox::{Checkbox, CheckboxGroup, CheckboxOption};
 pub use config::{ButtonTheme, ComponentsTheme, ConfigProvider, Theme};
 pub use dropdown::{menu_item, Dropdown};
 pub use input::{
