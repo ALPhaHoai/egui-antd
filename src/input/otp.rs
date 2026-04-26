@@ -93,96 +93,93 @@ impl<'a> Widget for OTP<'a> {
         let mut text_changed = false;
 
         let avail = ui.available_width();
-        let response =
-            ui.allocate_ui_with_layout(
-                egui::vec2(avail, 0.0),
-                Layout::left_to_right(Align::Center).with_main_wrap(false),
-                |ui| {
-                    ui.set_max_width(avail);
-                    ui.spacing_mut().item_spacing.x = gap;
+        let response = ui.allocate_ui_with_layout(
+            egui::vec2(avail, 0.0),
+            Layout::left_to_right(Align::Center).with_main_wrap(false),
+            |ui| {
+                ui.set_max_width(avail);
+                ui.spacing_mut().item_spacing.x = gap;
 
-                    #[allow(clippy::needless_range_loop)]
-                    for i in 0..self.length {
-                        let cell_id = id.with(i);
+                #[allow(clippy::needless_range_loop)]
+                for i in 0..self.length {
+                    let cell_id = id.with(i);
 
-                        let cell_text = if chars[i] != ' ' {
-                            chars[i].to_string()
-                        } else {
-                            String::new()
-                        };
+                    let cell_text = if chars[i] != ' ' {
+                        chars[i].to_string()
+                    } else {
+                        String::new()
+                    };
 
-                        let mut cell_string = cell_text.clone();
-                        let inner_response = ui
-                            .scope(|ui| {
-                                ui.set_max_width(width);
-                                let mut inp = Input::new(&mut cell_string)
-                                    .size(self.size)
-                                    .variant(self.variant)
-                                    .disabled(self.disabled)
-                                    .max_length(1);
+                    let mut cell_string = cell_text.clone();
+                    let inner_response = ui
+                        .scope(|ui| {
+                            ui.set_max_width(width);
+                            let mut inp = Input::new(&mut cell_string)
+                                .size(self.size)
+                                .variant(self.variant)
+                                .disabled(self.disabled)
+                                .max_length(1);
 
-                                if self.mask.is_some() {
-                                    inp = inp.password(true);
-                                }
-
-                                inp.ui(ui)
-                            })
-                            .inner;
-
-                        if inner_response.has_focus() {
-                            ui.input(|reader| {
-                                if reader.key_pressed(Key::ArrowRight) {
-                                    next_focus = Some(i + 1);
-                                } else if reader.key_pressed(Key::ArrowLeft)
-                                    || (reader.key_pressed(Key::Backspace)
-                                        && cell_string.is_empty())
-                                {
-                                    prev_focus = Some(i.saturating_sub(1));
-                                }
-                            });
-                        }
-
-                        if inner_response.changed() {
-                            if cell_string.chars().count() > 1 {
-                                cell_string =
-                                    cell_string.chars().last().unwrap_or(' ').to_string();
+                            if self.mask.is_some() {
+                                inp = inp.password(true);
                             }
 
-                            if !cell_string.is_empty() {
-                                chars[i] = cell_string.chars().next().unwrap_or(' ');
+                            inp.ui(ui)
+                        })
+                        .inner;
+
+                    if inner_response.has_focus() {
+                        ui.input(|reader| {
+                            if reader.key_pressed(Key::ArrowRight) {
                                 next_focus = Some(i + 1);
-                            } else {
-                                chars[i] = ' ';
-                            }
-                            text_changed = true;
-                        } else if cell_string != cell_text {
-                            chars[i] = cell_string.chars().next().unwrap_or(' ');
-                            text_changed = true;
-                        }
-
-                        ui.memory_mut(|mem| {
-                            if let Some(nf) = next_focus
-                                && nf == i
+                            } else if reader.key_pressed(Key::ArrowLeft)
+                                || (reader.key_pressed(Key::Backspace) && cell_string.is_empty())
                             {
-                                mem.request_focus(cell_id);
-                            }
-                            if let Some(pf) = prev_focus
-                                && pf == i
-                            {
-                                mem.request_focus(cell_id);
+                                prev_focus = Some(i.saturating_sub(1));
                             }
                         });
-
-                        responses.push(inner_response);
-
-                        if i + 1 < self.length
-                            && let Some(sep) = &self.separator
-                        {
-                            sep(i, ui);
-                        }
                     }
-                },
-            );
+
+                    if inner_response.changed() {
+                        if cell_string.chars().count() > 1 {
+                            cell_string = cell_string.chars().last().unwrap_or(' ').to_string();
+                        }
+
+                        if !cell_string.is_empty() {
+                            chars[i] = cell_string.chars().next().unwrap_or(' ');
+                            next_focus = Some(i + 1);
+                        } else {
+                            chars[i] = ' ';
+                        }
+                        text_changed = true;
+                    } else if cell_string != cell_text {
+                        chars[i] = cell_string.chars().next().unwrap_or(' ');
+                        text_changed = true;
+                    }
+
+                    ui.memory_mut(|mem| {
+                        if let Some(nf) = next_focus
+                            && nf == i
+                        {
+                            mem.request_focus(cell_id);
+                        }
+                        if let Some(pf) = prev_focus
+                            && pf == i
+                        {
+                            mem.request_focus(cell_id);
+                        }
+                    });
+
+                    responses.push(inner_response);
+
+                    if i + 1 < self.length
+                        && let Some(sep) = &self.separator
+                    {
+                        sep(i, ui);
+                    }
+                }
+            },
+        );
 
         let mut final_response = response.response;
         for r in &responses {

@@ -75,14 +75,13 @@ impl<'a> Widget for Password<'a> {
         if self.visibility_toggle {
             input = input.suffix(Box::new(move |ui: &mut Ui| {
                 let icon = if visible { "⊙" } else { "⊘" };
-                let response = ui
-                    .add(
-                        egui::Label::new(
-                            egui::RichText::new(icon)
-                                .color(Color32::from_rgb(0, 0, 0).linear_multiply(0.45)),
-                        )
-                        .sense(Sense::click()),
-                    );
+                let response = ui.add(
+                    egui::Label::new(
+                        egui::RichText::new(icon)
+                            .color(Color32::from_rgb(0, 0, 0).linear_multiply(0.45)),
+                    )
+                    .sense(Sense::click()),
+                );
                 if response.clicked() {
                     visible = !visible;
                     ui.data_mut(|d| d.insert_temp(id, visible));

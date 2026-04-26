@@ -93,57 +93,54 @@ impl<'a> Widget for Search<'a> {
         let search_icon = egui_phosphor::regular::MAGNIFYING_GLASS;
 
         if has_enter_button {
-            let resp = ui.with_layout(
-                egui::Layout::right_to_left(egui::Align::Center),
-                |ui| {
-                    ui.spacing_mut().item_spacing.x = 0.0;
+            let resp = ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                ui.spacing_mut().item_spacing.x = 0.0;
 
-                    let btn_size = match size {
-                        InputSize::Large => ButtonSize::Large,
-                        InputSize::Middle => ButtonSize::Middle,
-                        InputSize::Small => ButtonSize::Small,
-                    };
+                let btn_size = match size {
+                    InputSize::Large => ButtonSize::Large,
+                    InputSize::Middle => ButtonSize::Middle,
+                    InputSize::Small => ButtonSize::Small,
+                };
 
-                    let btn = if let Some(btn_text) = enter_button_text {
-                        Button::new(btn_text)
-                            .button_type(ButtonType::Primary)
-                            .size(btn_size)
-                            .set_position(ButtonPosition::Last)
-                    } else {
-                        Button::new("")
-                            .button_type(ButtonType::Primary)
-                            .size(btn_size)
-                            .set_position(ButtonPosition::Last)
-                            .icon(egui::RichText::new(search_icon))
-                    };
+                let btn = if let Some(btn_text) = enter_button_text {
+                    Button::new(btn_text)
+                        .button_type(ButtonType::Primary)
+                        .size(btn_size)
+                        .set_position(ButtonPosition::Last)
+                } else {
+                    Button::new("")
+                        .button_type(ButtonType::Primary)
+                        .size(btn_size)
+                        .set_position(ButtonPosition::Last)
+                        .icon(egui::RichText::new(search_icon))
+                };
 
-                    // Place the trailing button first so it occupies the right edge,
-                    // leaving the input to fill only the remaining width on the left.
-                    ui.add_enabled(!disabled, btn);
+                // Place the trailing button first so it occupies the right edge,
+                // leaving the input to fill only the remaining width on the left.
+                ui.add_enabled(!disabled, btn);
 
-                    let mut rounding = utils::get_input_rounding(InputVariant::Outlined);
-                    rounding.ne = 0;
-                    rounding.se = 0;
+                let mut rounding = utils::get_input_rounding(InputVariant::Outlined);
+                rounding.ne = 0;
+                rounding.se = 0;
 
-                    render_input_core(
-                        ui,
-                        text,
-                        hint_text,
-                        size,
-                        InputVariant::Outlined,
-                        disabled,
-                        false,
-                        false,
-                        allow_clear,
-                        None,
-                        false,
-                        status,
-                        None,
-                        suffix,
-                        rounding,
-                    )
-                },
-            );
+                render_input_core(
+                    ui,
+                    text,
+                    hint_text,
+                    size,
+                    InputVariant::Outlined,
+                    disabled,
+                    false,
+                    false,
+                    allow_clear,
+                    None,
+                    false,
+                    status,
+                    None,
+                    suffix,
+                    rounding,
+                )
+            });
             resp.inner
         } else {
             let search_disabled = disabled;

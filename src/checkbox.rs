@@ -1,4 +1,6 @@
-use egui::{self, Color32, CornerRadius, FontId, Pos2, Rect, Stroke, Vec2, Widget, WidgetInfo, WidgetType};
+use egui::{
+    self, Color32, CornerRadius, FontId, Pos2, Rect, Stroke, Vec2, Widget, WidgetInfo, WidgetType,
+};
 
 // AntD 5.0 Design Tokens
 const CONTROL_INTERACTIVE_SIZE: f32 = 16.0;
@@ -85,14 +87,14 @@ impl Widget for Checkbox<'_> {
         // Compute text size only (drop galley immediately to avoid holding Arc across ctx calls)
         let font_id = FontId::proportional(14.0);
         let text_size = label.as_ref().map(|text| {
-            let g = ui.painter().layout_no_wrap(text.clone(), font_id.clone(), text_color);
+            let g = ui
+                .painter()
+                .layout_no_wrap(text.clone(), font_id.clone(), text_color);
             g.size()
         });
 
-        let total_width = CONTROL_INTERACTIVE_SIZE
-            + text_size.map_or(0.0, |s| LABEL_GAP + s.x);
-        let total_height = CONTROL_INTERACTIVE_SIZE
-            .max(text_size.map_or(0.0, |s| s.y));
+        let total_width = CONTROL_INTERACTIVE_SIZE + text_size.map_or(0.0, |s| LABEL_GAP + s.x);
+        let total_height = CONTROL_INTERACTIVE_SIZE.max(text_size.map_or(0.0, |s| s.y));
 
         let desired_size = Vec2::new(total_width, total_height);
         let (rect, mut response) = ui.allocate_at_least(desired_size, egui::Sense::click());
@@ -120,9 +122,9 @@ impl Widget for Checkbox<'_> {
         if ui.is_rect_visible(rect) {
             let is_hover = response.hovered() && !disabled;
 
-            let hover_t =
-                ui.ctx()
-                    .animate_bool_with_time(response.id.with("hover"), is_hover, 0.1);
+            let hover_t = ui
+                .ctx()
+                .animate_bool_with_time(response.id.with("hover"), is_hover, 0.1);
 
             // Wave effect timing
             let wave_id = response.id.with("wave");
@@ -216,8 +218,7 @@ impl Widget for Checkbox<'_> {
                 } else {
                     CHECKMARK_COLOR
                 };
-                let dash_rect =
-                    Rect::from_center_size(box_rect.center(), Vec2::new(8.0, 2.0));
+                let dash_rect = Rect::from_center_size(box_rect.center(), Vec2::new(8.0, 2.0));
                 ui.painter()
                     .rect_filled(dash_rect, CornerRadius::ZERO, dash_color);
             }
@@ -243,11 +244,9 @@ impl Widget for Checkbox<'_> {
 
             // Label: create galley fresh here during paint phase only
             if let Some(text) = &label {
-                let galley = ui.painter().layout_no_wrap(
-                    text.clone(),
-                    font_id,
-                    text_color,
-                );
+                let galley = ui
+                    .painter()
+                    .layout_no_wrap(text.clone(), font_id, text_color);
                 let text_pos = Pos2::new(
                     box_rect.max.x + LABEL_GAP,
                     rect.min.y + (rect.height() - galley.size().y) / 2.0,

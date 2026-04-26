@@ -121,8 +121,14 @@ impl<'a> Widget for TextArea<'a> {
         let interact_id = ui.next_auto_id();
         let is_focused = ui.memory(|mem| mem.has_focus(interact_id));
 
-        let stroke =
-            get_interactive_stroke(base_stroke, variant, disabled, is_focused, is_hovered, status);
+        let stroke = get_interactive_stroke(
+            base_stroke,
+            variant,
+            disabled,
+            is_focused,
+            is_hovered,
+            status,
+        );
 
         let frame = egui::Frame::NONE
             .inner_margin(egui::Margin::symmetric(padding.x as i8, padding.y as i8))
@@ -130,65 +136,63 @@ impl<'a> Widget for TextArea<'a> {
             .fill(bg_color)
             .stroke(stroke);
 
-        let frame_resp = frame
-            .show(ui, |ui| {
-                let mut text_edit = TextEdit::multiline(text)
-                    .text_color(text_color)
-                    .frame(egui::Frame::NONE)
-                    .desired_width(ui.available_width());
+        let frame_resp = frame.show(ui, |ui| {
+            let mut text_edit = TextEdit::multiline(text)
+                .text_color(text_color)
+                .frame(egui::Frame::NONE)
+                .desired_width(ui.available_width());
 
-                if disabled || read_only {
-                    text_edit = text_edit.interactive(false);
-                }
+            if disabled || read_only {
+                text_edit = text_edit.interactive(false);
+            }
 
-                if let Some(hint) = hint_text {
-                    text_edit = text_edit.hint_text(hint);
-                }
+            if let Some(hint) = hint_text {
+                text_edit = text_edit.hint_text(hint);
+            }
 
-                if let Some((min_rows, _max_rows)) = auto_size {
-                    text_edit = text_edit.desired_rows(min_rows);
-                }
+            if let Some((min_rows, _max_rows)) = auto_size {
+                text_edit = text_edit.desired_rows(min_rows);
+            }
 
-                let text_output = text_edit.show(ui);
-                let response = text_output.response;
+            let text_output = text_edit.show(ui);
+            let response = text_output.response;
 
-                let has_footer =
-                    (allow_clear && !text.is_empty() && !disabled && !read_only) || show_count;
-                if has_footer {
-                    ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                        if show_count {
-                            let current_count = text.chars().count();
-                            let count_text = if let Some(max_len) = max_length {
-                                format!("{}/{}", current_count, max_len)
-                            } else {
-                                format!("{}", current_count)
-                            };
-                            ui.label(
-                                egui::RichText::new(count_text)
-                                    .color(Color32::from_rgb(0, 0, 0).linear_multiply(0.45)),
-                            );
+            let has_footer =
+                (allow_clear && !text.is_empty() && !disabled && !read_only) || show_count;
+            if has_footer {
+                ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                    if show_count {
+                        let current_count = text.chars().count();
+                        let count_text = if let Some(max_len) = max_length {
+                            format!("{}/{}", current_count, max_len)
+                        } else {
+                            format!("{}", current_count)
+                        };
+                        ui.label(
+                            egui::RichText::new(count_text)
+                                .color(Color32::from_rgb(0, 0, 0).linear_multiply(0.45)),
+                        );
+                    }
+
+                    if allow_clear && !text.is_empty() && !disabled && !read_only {
+                        let clear_btn = ui.add(
+                            egui::Label::new(
+                                egui::RichText::new("✖")
+                                    .color(Color32::from_rgb(0, 0, 0).linear_multiply(0.25)),
+                            )
+                            .sense(Sense::click()),
+                        );
+                        if clear_btn.clicked() {
+                            text.clear();
                         }
+                    }
+                });
+            }
 
-                        if allow_clear && !text.is_empty() && !disabled && !read_only {
-                            let clear_btn = ui.add(
-                                egui::Label::new(
-                                    egui::RichText::new("✖").color(
-                                        Color32::from_rgb(0, 0, 0).linear_multiply(0.25),
-                                    ),
-                                )
-                                .sense(Sense::click()),
-                            );
-                            if clear_btn.clicked() {
-                                text.clear();
-                            }
-                        }
-                    });
-                }
+            response
+        });
 
-                response
-            });
-        
-        // Return the response for the frame, so interaction works properly 
+        // Return the response for the frame, so interaction works properly
         frame_resp.response
     }
 }

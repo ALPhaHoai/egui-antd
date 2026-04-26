@@ -156,8 +156,10 @@ where
                     let btn_height = (height - padding.y * 2.0) / 2.0;
 
                     // Vertical separator
-                    let (rect, _) =
-                        ui.allocate_at_least(Vec2::new(1.0, height - padding.y * 2.0), Sense::hover());
+                    let (rect, _) = ui.allocate_at_least(
+                        Vec2::new(1.0, height - padding.y * 2.0),
+                        Sense::hover(),
+                    );
                     ui.painter()
                         .line_segment([rect.left_top(), rect.left_bottom()], base_stroke);
 
@@ -207,13 +209,11 @@ where
                     let down_pressed = ui.input(|r| r.key_pressed(egui::Key::ArrowDown));
 
                     if up_pressed {
-                        let new_val =
-                            Self::clamp_val(value.to_f64() + step_f64, &min, &max);
+                        let new_val = Self::clamp_val(value.to_f64() + step_f64, &min, &max);
                         *value = T::from_f64(new_val);
                         text_buf = value.to_string();
                     } else if down_pressed {
-                        let new_val =
-                            Self::clamp_val(value.to_f64() - step_f64, &min, &max);
+                        let new_val = Self::clamp_val(value.to_f64() - step_f64, &min, &max);
                         *value = T::from_f64(new_val);
                         text_buf = value.to_string();
                     }
@@ -232,8 +232,12 @@ where
         let interactive_stroke =
             utils::get_interactive_stroke(base_stroke, variant, disabled, focused, hovered, status);
         if interactive_stroke != base_stroke {
-            ui.painter()
-                .rect_stroke(resp.rect, rounding, interactive_stroke, egui::StrokeKind::Inside);
+            ui.painter().rect_stroke(
+                resp.rect,
+                rounding,
+                interactive_stroke,
+                egui::StrokeKind::Inside,
+            );
         }
 
         frame_resp.response

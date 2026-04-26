@@ -175,76 +175,73 @@ pub(crate) fn render_input_core(
             // Render trailing widgets (suffix, count, clear) in right_to_left so the
             // text edit naturally fills only the remaining space and never overflows
             // the input frame's width.
-            ui.with_layout(
-                egui::Layout::right_to_left(egui::Align::Center),
-                |ui| {
-                    if let Some(suffix_fn) = suffix {
-                        suffix_fn(ui);
-                    }
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                if let Some(suffix_fn) = suffix {
+                    suffix_fn(ui);
+                }
 
-                    if show_count {
-                        let current_count = text.chars().count();
-                        let count_text = if let Some(max_len) = max_length {
-                            format!("{}/{}", current_count, max_len)
-                        } else {
-                            format!("{}", current_count)
-                        };
-                        ui.label(
-                            egui::RichText::new(count_text)
-                                .color(Color32::from_rgb(0, 0, 0).linear_multiply(0.45)),
-                        );
-                    }
+                if show_count {
+                    let current_count = text.chars().count();
+                    let count_text = if let Some(max_len) = max_length {
+                        format!("{}/{}", current_count, max_len)
+                    } else {
+                        format!("{}", current_count)
+                    };
+                    ui.label(
+                        egui::RichText::new(count_text)
+                            .color(Color32::from_rgb(0, 0, 0).linear_multiply(0.45)),
+                    );
+                }
 
-                    let show_clear_icon = allow_clear && !text.is_empty() && !disabled;
-                    let mut clear_clicked = false;
-                    if show_clear_icon {
-                        let clear_btn = ui.add(
-                            egui::Label::new(
-                                egui::RichText::new("\u{2716}")
-                                    .color(Color32::from_rgb(0, 0, 0).linear_multiply(0.25)),
-                            )
-                            .sense(Sense::click()),
-                        );
-                        if clear_btn.clicked() {
-                            clear_clicked = true;
-                        }
-                    }
-
-                    let mut text_edit = egui::TextEdit::singleline(text)
-                        .text_color(text_color)
-                        .frame(egui::Frame::NONE)
-                        .desired_width(f32::INFINITY)
-                        .min_size(Vec2::new(0.0, height - padding.y * 2.0));
-
-                    if let Some(hint) = hint_text {
-                        text_edit = text_edit.hint_text(
-                            egui::WidgetText::from(hint)
+                let show_clear_icon = allow_clear && !text.is_empty() && !disabled;
+                let mut clear_clicked = false;
+                if show_clear_icon {
+                    let clear_btn = ui.add(
+                        egui::Label::new(
+                            egui::RichText::new("\u{2716}")
                                 .color(Color32::from_rgb(0, 0, 0).linear_multiply(0.25)),
-                        );
+                        )
+                        .sense(Sense::click()),
+                    );
+                    if clear_btn.clicked() {
+                        clear_clicked = true;
                     }
+                }
 
-                    if password {
-                        text_edit = text_edit.password(true);
-                    }
+                let mut text_edit = egui::TextEdit::singleline(text)
+                    .text_color(text_color)
+                    .frame(egui::Frame::NONE)
+                    .desired_width(f32::INFINITY)
+                    .min_size(Vec2::new(0.0, height - padding.y * 2.0));
 
-                    let text_resp = ui.add_enabled(!disabled && !read_only, text_edit);
+                if let Some(hint) = hint_text {
+                    text_edit = text_edit.hint_text(
+                        egui::WidgetText::from(hint)
+                            .color(Color32::from_rgb(0, 0, 0).linear_multiply(0.25)),
+                    );
+                }
 
-                    if clear_clicked {
-                        text.clear();
-                        text_resp.request_focus();
-                    }
+                if password {
+                    text_edit = text_edit.password(true);
+                }
 
-                    text_resp
-                },
-            )
+                let text_resp = ui.add_enabled(!disabled && !read_only, text_edit);
+
+                if clear_clicked {
+                    text.clear();
+                    text_resp.request_focus();
+                }
+
+                text_resp
+            })
             .inner
         })
         .inner
     });
 
-    let resp = &frame_resp.response;
-    let focused = resp.has_focus();
-    let hovered = ui.rect_contains_pointer(resp.rect);
+    let outer_resp = &frame_resp.response;
+    let focused = frame_resp.inner.has_focus();
+    let hovered = ui.rect_contains_pointer(outer_resp.rect);
 
     if disabled && hovered {
         ui.ctx().set_cursor_icon(egui::CursorIcon::NotAllowed);
@@ -260,19 +257,26 @@ pub(crate) fn render_input_core(
             status,
         );
         ui.painter().line_segment(
-            [resp.rect.left_bottom(), resp.rect.right_bottom()],
+            [
+                outer_resp.rect.left_bottom(),
+                outer_resp.rect.right_bottom(),
+            ],
             underline_stroke,
         );
     } else {
         let interactive_stroke =
             utils::get_interactive_stroke(base_stroke, variant, disabled, focused, hovered, status);
         if interactive_stroke != base_stroke {
-            ui.painter()
-                .rect_stroke(resp.rect, rounding, interactive_stroke, egui::StrokeKind::Inside);
+            ui.painter().rect_stroke(
+                outer_resp.rect,
+                rounding,
+                interactive_stroke,
+                egui::StrokeKind::Inside,
+            );
         }
     }
 
-    frame_resp.response
+    frame_resp.inner
 }
 
 impl<'a> Widget for Input<'a> {
@@ -342,8 +346,21 @@ impl<'a> Widget for Input<'a> {
                 }
 
                 let input_resp = render_input_core(
-                    ui, text, hint_text, size, variant, disabled, read_only, password, allow_clear,
-                    max_length, show_count, status, prefix, suffix, rounding,
+                    ui,
+                    text,
+                    hint_text,
+                    size,
+                    variant,
+                    disabled,
+                    read_only,
+                    password,
+                    allow_clear,
+                    max_length,
+                    show_count,
+                    status,
+                    prefix,
+                    suffix,
+                    rounding,
                 );
 
                 if let Some(addon_fn) = addon_after {
@@ -371,8 +388,21 @@ impl<'a> Widget for Input<'a> {
             resp.inner
         } else {
             render_input_core(
-                ui, text, hint_text, size, variant, disabled, read_only, password, allow_clear,
-                max_length, show_count, status, prefix, suffix, rounding,
+                ui,
+                text,
+                hint_text,
+                size,
+                variant,
+                disabled,
+                read_only,
+                password,
+                allow_clear,
+                max_length,
+                show_count,
+                status,
+                prefix,
+                suffix,
+                rounding,
             )
         }
     }

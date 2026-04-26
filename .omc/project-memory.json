@@ -1,0 +1,93 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1777198427994,
+  "projectRoot": "C:\\RustProjects\\egui-antd",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "Rust",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "Cargo.toml"
+        ]
+      }
+    ],
+    "frameworks": [],
+    "packageManager": "cargo",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "cargo build",
+    "testCommand": "npm test",
+    "lintCommand": "cargo clippy",
+    "devCommand": "cargo run",
+    "scripts": {
+      "test": "echo \"Error: no test specified\" && exit 1"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "examples",
+      "src"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "examples": {
+      "path": "examples",
+      "purpose": "Example code",
+      "fileCount": 5,
+      "lastAccessed": 1777198427968,
+      "keyFiles": [
+        "button.rs",
+        "checkbox.rs",
+        "input.rs",
+        "tabs.rs",
+        "template.rs"
+      ]
+    },
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 8,
+      "lastAccessed": 1777198427969,
+      "keyFiles": [
+        "button.rs",
+        "checkbox.rs",
+        "config.rs",
+        "dropdown.rs",
+        "input.rs"
+      ]
+    },
+    "target": {
+      "path": "target",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1777198427977,
+      "keyFiles": []
+    }
+  },
+  "hotPaths": [],
+  "userDirectives": []
+}
