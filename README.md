@@ -4,10 +4,12 @@ A port of [Ant Design](https://ant.design/) components to [egui](https://github.
 
 Currently implemented:
 - [Button](https://ant.design/components/button)
+- [Checkbox](https://ant.design/components/checkbox)
 - [Input](https://ant.design/components/input)
 - [Space](https://ant.design/components/space)
 - [Tabs](https://ant.design/components/tabs)
 - [Dropdown](https://ant.design/components/dropdown)
+- [ConfigProvider](https://ant.design/components/config-provider)
 
 ## Button Features
 
@@ -16,12 +18,22 @@ Currently implemented:
 - **Sizes**: `Large`, `Middle`, `Small`
 - **Variants**: `Danger`, `Ghost`
 - **States**: `Disabled`, `Loading`, `Block` (full width), `Hover`, `Active`
-- **Interactive**: 
+- **Interactive**:
   - Smooth color transitions for hover/active states.
   - **Wave Effect**: Ant Design style spreading ripple on click.
 - **Icons**: Supports both text-based icons (emojis) and graphical icons (`egui::Image` via SVG/PNG).
 - **Typography**: Automatic spacing for two-character Chinese strings (e.g., "确认" -> "确 认").
 - **Groups**: `ButtonGroup` for cohesive multi-button layouts.
+
+## Checkbox Features
+
+- **States**: Checked, unchecked, `indeterminate` (dash)
+- **Disabled**: Visual disabled state with correct cursor
+- **Label**: Optional inline label text
+- **Wave Effect**: Ant Design style ripple on click
+- **Hover animation**: Smooth border/fill color transition
+- **`CheckboxGroup`**: Render a group from a `Vec<CheckboxOption>`, tracking selected values as `Vec<String>`
+- **`CheckboxOption`**: Per-option `value`, `label`, and optional `disabled`
 
 ## Input Features
 
@@ -68,9 +80,22 @@ Currently implemented:
 - **Trigger**: Supports triggering from any `Button`
 - **Menu**: Ant Design 5.0 styled popup menu with `menu_item` helpers.
 
+## ConfigProvider Features
+
+- Wraps child UI with a scoped `Theme` applied via egui context storage.
+- **`ButtonTheme`**: Override per-component token defaults (e.g., disabled background colors).
+- Nested `ConfigProvider`s are supported; the inner theme is restored on exit.
+
 ## Usage
 
-Add `egui` and `eframe` to your `Cargo.toml`. Include the `egui-antd` crate in your project.
+Add `egui-antd` to your `Cargo.toml`:
+
+```toml
+[dependencies]
+egui-antd = "0.1.0"
+```
+
+### Button Example
 
 ```rust
 use egui_antd::{Button, ButtonType, ButtonSize, ButtonShape};
@@ -81,6 +106,33 @@ ui.add(
         .size(ButtonSize::Large)
         .shape(ButtonShape::Round)
 );
+```
+
+### Checkbox Example
+
+```rust
+use egui_antd::{Checkbox, CheckboxGroup, CheckboxOption};
+
+let mut checked = false;
+
+// Basic checkbox with label
+ui.add(Checkbox::new(&mut checked).label("Remember me"));
+
+// Indeterminate state
+ui.add(Checkbox::new(&mut checked).indeterminate(true));
+
+// Disabled
+ui.add(Checkbox::new(&mut checked).disabled(true));
+
+// Group — tracks selected values as Vec<String>
+let mut selected: Vec<String> = vec!["apple".to_string()];
+CheckboxGroup::new(&mut selected)
+    .options(vec![
+        CheckboxOption::new("apple", "Apple"),
+        CheckboxOption::new("pear", "Pear"),
+        CheckboxOption::new("orange", "Orange").disabled(true),
+    ])
+    .show(ui);
 ```
 
 ### Input Example
@@ -123,7 +175,7 @@ ui.add(
 ```rust
 use egui_antd::{Tabs, TabPane};
 
-let mut active_key = "1".to_string(); // Managed by your state
+let mut active_key = "1".to_string();
 
 Tabs::new("my_tabs")
     .active_key(&mut active_key)
@@ -139,21 +191,44 @@ Tabs::new("my_tabs")
     });
 ```
 
+### ConfigProvider Example
+
+```rust
+use egui_antd::{ConfigProvider, Theme, ComponentsTheme, ButtonTheme};
+
+let theme = Theme {
+    components: ComponentsTheme {
+        button: ButtonTheme {
+            default_bg_disabled: Some(egui::Color32::from_gray(230)),
+            ..Default::default()
+        },
+    },
+};
+
+ConfigProvider::new()
+    .theme(theme)
+    .show(ui, |ui| {
+        // All components rendered here use the custom theme
+    });
+```
+
 ## Running the Demo
 
 ```bash
 cargo run --example button
+cargo run --example checkbox
 cargo run --example input
 cargo run --example tabs
 ```
 
 ## Implementation Details
 
-The `Button` is implemented as a custom `egui::Widget`. It uses `egui::Painter` to manually render the borders, backgrounds, and text with specific Ant Design 5.0 design tokens:
+Components are implemented as custom `egui::Widget`s. They use `egui::Painter` to manually render borders, backgrounds, and text with Ant Design 5.0 design tokens:
 
 - **Primary Blue**: `#1677ff` (Hover: `#4096ff`, Active: `#0958d9`)
 - **Error Red**: `#ff4d4f` (Hover: `#ff7875`, Active: `#d93635`)
 - **Border Radius**: `6px` (Standard for AntD 5.0)
+- **Control Size**: `16px` (Checkbox, radio)
 
 ## Development
 

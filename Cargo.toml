@@ -2,6 +2,12 @@
 name = "egui-antd"
 version = "0.1.0"
 edition = "2024"
+description = "Ant Design 5.0 components for egui — Button, Checkbox, Input, Tabs, Dropdown, Space, and more."
+license = "MIT"
+repository = "https://github.com/ALPhaHoai/egui-antd"
+readme = "README.md"
+keywords = ["egui", "antd", "ant-design", "gui", "widgets"]
+categories = ["gui", "rendering"]
 
 [lints.clippy]
 mod_module_files = "deny"
